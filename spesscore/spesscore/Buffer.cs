@@ -38,4 +38,9 @@ struct RingBuffer<T>(uint size) where T : struct
         Array.Copy(data, 0, buffer, ptr, dsize);
         return ptr;
     }
+
+    public void Clear()
+    {
+        ptr = 0;
+    }
 }

@@ -7,5 +7,5 @@ local function create_hand(dev, dir, name)
         Store = dir,
         Name = name
     })
-    dev.query("handle", "SELECT * FROM")
+    dev.query("handle", "SELECT * FROM FileData WHERE Inode=@inode SORT ASC")
 end

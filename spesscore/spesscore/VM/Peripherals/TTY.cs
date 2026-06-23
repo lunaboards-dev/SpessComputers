@@ -11,7 +11,7 @@ class TTY : AbstractPeripheral
     TerminalListener? listener;
 
     Dictionary<string, IPeripheral.PeripheralCallback> callbacks;
-    TTY() : base("tty")
+    public TTY() : base("tty")
     {
         callbacks = new()
         {
