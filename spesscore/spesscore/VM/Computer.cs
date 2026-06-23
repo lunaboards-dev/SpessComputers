@@ -6,12 +6,14 @@ namespace spesscore.VM;
 
 class Computer
 {
-    int max_memory;
+    int max_memory = 1024*1024;
     int cpu_speed;
     int currently_allocated;
     List<IPeripheral> Peripherals = [];
     RingBuffer<LuaSignal> events = new((uint)Config.EventBufferSize);
     TTY? LocalTTY;
+    public TTY? LocalTerminal => LocalTTY;
+    public EEPROM? eeprom;
     ManagedDisk? Disk;
 
     Lua L;
@@ -73,6 +75,16 @@ class Computer
         });
         L.SetTable(-3);
 
+        L.PushString("eeprom");
+        L.PushCFunction((ptr) =>
+        {
+            Lua ctx = Lua.FromIntPtr(ptr);
+            if (eeprom == null) return 0;
+            PushPeripheral(ctx, eeprom);
+            return 1;
+        });
+        L.SetTable(-3);
+
         L.PushString("tty");
         L.PushCFunction((ptr) =>
         {
@@ -91,11 +103,12 @@ class Computer
             PushPeripheral(ctx, Disk);
             return 1;
         });
+        L.SetTable(-3);
 
-
+        L.SetGlobal("computer");
     }
 
-    void PushPeripheral(Lua l, IPeripheral p)
+    void PushPeripheral<T>(Lua l, T p) where T : class, IPeripheral
     {
         l.PushObject(p);
         l.NewTable();
@@ -107,7 +120,11 @@ class Computer
             l.PushCFunction((ptr) =>
             {
                 Lua ctx = Lua.FromIntPtr(ptr);
-                IPeripheral px = ctx.ToObject<IPeripheral>(1);
+                T px = ctx.ToObject<T>(1);
+                if (px == null)
+                {
+                    return L.Error("internal error");
+                }
                 if (px.Computer != this)
                 {
                     return L.Error("Peripheral not connected.");
@@ -158,21 +175,46 @@ class Computer
             LocalTTY = tty;
         }
     }
-
+    bool active = false;
+    public bool Active => active;
     // STAHP! NO!
     void Stop()
     {
         Pause();
-
+        active = false;
     }
 
-    void Start()
+    async Task Start()
     {
-        
+        try {
+            InitLuaState(); // oh my fucking god bruh
+            active = true;
+            L.PushCFunction((ptr) =>
+            {
+                Lua ctx = Lua.FromIntPtr(ptr);
+                string str = ctx.ToString(1);
+                ctx.Traceback(ctx, str, 1);
+                string traceback = ctx.ToString(-1);
+                SpessCore.Instance?.Bwoinks.Add(traceback);
+                Console.WriteLine("Uncaught error: "+traceback);
+                return 0;
+            });
+            L.LoadBuffer(SpessCore.Instance?.MachineLua, "machine.lua");
+            L.PCall(0, 0, -2);
+        } catch (Exception e)
+        {
+            Console.Write(e);
+        }
     }
 
     void Pause()
     {
         
+    }
+
+    public void TogglePower(bool hard)
+    {
+        if (active) Stop();
+        else Start();
     }
 }

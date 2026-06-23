@@ -13,6 +13,7 @@ class SpessCore
 {
     List<Computer> Computers = [];
     List<Object> PendingCalls = [];
+    public List<string> Bwoinks = [];
     Dictionary<string, IPeripheral> Peripherals = [];
     public TerminalServer TServ;
     public byte[] MachineLua;
@@ -22,6 +23,7 @@ class SpessCore
 
     public SpessCore()
     {
+        File.Delete(Config.IPCSocketPath);
         ipc = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
         var endpoint = new UnixDomainSocketEndPoint(Config.IPCSocketPath);
         ipc.Bind(endpoint);
@@ -37,6 +39,11 @@ class SpessCore
         }
         MachineLua = new byte[str.Length];
         str.Read(MachineLua);
+        TaskScheduler.UnobservedTaskException += (sender, args) => {
+            string err = args.Exception.ToString();
+            Console.Error.WriteLine(err);
+            Bwoinks.Add(err);
+        };
     }
 
     public string NewID()
@@ -87,6 +94,7 @@ class SpessCore
         EEPROM eeprom = new(bios);
         AddPeripheral(eeprom);
         comp.AddPeripheral(eeprom);
+        comp.eeprom = eeprom;
         TTY tty = new();
         AddPeripheral(tty);
         comp.AddPeripheral(tty);
@@ -97,7 +105,8 @@ class SpessCore
     public void Start()
     {
         // await connection
-        
+        // actually don't do anything like a boss
+        while (true) {}
         // close if we lose connection
     }
 }

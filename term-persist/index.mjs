@@ -1,11 +1,13 @@
-import { Terminal } from '@xterm/headless';
+import pkg from '@xterm/headless';
+const { Terminal } = pkg;
 import { SerializeAddon } from "@xterm/addon-serialize";
 
-const process = require('node:process');
+import process from 'node:process';
 
 const term = new Terminal({
     cols: 80,
-    rows: 25
+    rows: 25,
+    allowProposedApi: true
 });
 
 const serializeAddon = new SerializeAddon();
@@ -16,7 +18,7 @@ process.stdin.on('data', (data) => {
 })
 
 process.stdin.on('end', () => {
-    process.abort();
+    process.exit(0);
 })
 
 process.on('SIGINT', () => {

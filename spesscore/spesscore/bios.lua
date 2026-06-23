@@ -1,2 +1,3 @@
+print("test")
 local tty = computer.tty()
-tty.write("SpessCore test.")
+tty.write("SpessCore test.\r\n")

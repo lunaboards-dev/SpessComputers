@@ -1,3 +1,6 @@
+print("machine.lua")
+print(computer)
+
 -- we do all the init here
 
 -- taken straight from OC's machine.lua
@@ -620,12 +623,20 @@ do
 end
 
 xpcall(function()
+    local tty = computer.tty()
+    local eep
+    for comp, type in computer.peripherals("") do
+      if (type == "eeprom") then
+        eep = comp
+      end
+      tty:write(string.format("%s\t%s\r\n", comp, type))
+    end
     load(computer.eeprom():code())()
     error("halted")
 end, function(err)
     -- print to vt
     local tty = computer.tty()
     if tty then
-        tty.write(debug.traceback(err))
+        tty:write(debug.traceback(err):gsub("\n","\r\n"))
     end
 end)
