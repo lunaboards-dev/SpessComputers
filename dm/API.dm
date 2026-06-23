@@ -7,3 +7,12 @@
 
     // callback names and proc references
     var/list/callbacks = list();
+
+    // (you)
+    var/holder
+
+/datum/spess_peripheral/proc/Attach(computer)
+
+/datum/spess_peripheral/proc/Detach(computer)
+
+/datum/spess_peripheral/proc/PDestroy()
