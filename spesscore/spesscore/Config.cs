@@ -60,7 +60,7 @@ public static class Config
         DebugAllowGCHooks = flags.Contains("debugallowgchooks");
         DebugUseNativePatternMatching = flags.Contains("debugusenativepatternmatching");
         NoCreateDefaultTables = flags.Contains("nocreatedefaulttables");
-        DebugEnableControlWS = flags.Contains("debugenablecontrolws"); // IF YOU USE THIS IN PROD I WILL KILL YOU
+        DebugEnableControlWS = true;//flags.Contains("debugenablecontrolws"); // IF YOU USE THIS IN PROD I WILL KILL YOU
                                                                        // LIKELY WITH A BALLPEEN HAMMER
 
         // key-value pairs

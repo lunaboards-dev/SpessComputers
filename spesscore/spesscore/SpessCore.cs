@@ -41,7 +41,7 @@ class SpessCore
         str.Read(MachineLua);
         TaskScheduler.UnobservedTaskException += (sender, args) => {
             string err = args.Exception.ToString();
-            Console.Error.WriteLine(err);
+            Console.Error.WriteLine("KILL: "+err);
             Bwoinks.Add(err);
         };
     }

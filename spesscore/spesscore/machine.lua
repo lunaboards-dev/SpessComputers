@@ -1,6 +1,14 @@
 print("machine.lua")
-print(computer)
+local computer = {}
 
+for k, v in pairs(_computer) do
+  local c = _computer
+  local func = v
+  computer[k] = function(...)
+    return v(c, ...)
+  end
+end
+_computer = nil
 -- we do all the init here
 
 -- taken straight from OC's machine.lua
