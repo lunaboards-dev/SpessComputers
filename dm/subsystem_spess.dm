@@ -14,8 +14,10 @@ SUBSYSTEM_DEF(spesscomputers)
     var/list/queued_returns = list()
     // info about our last tick update
     var/list/last_update = list()
-    // errors :()
+    // errors :(
     var/list/bwoinks = list()
+    // if you varedit this i will kill you
+    var/socket_fd
 
 /datum/controller/subsystem/spesscomputers/Initialize()
     // we're working on it
