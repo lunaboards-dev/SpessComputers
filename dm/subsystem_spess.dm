@@ -8,21 +8,20 @@ SUBSYSTEM_DEF(spesscomputers)
     ss_flags = SS_BACKGROUND
     runlevels = RUNLEVEL_SETUP | RUNLEVEL_GAME
 
-    var/sc_init
     var/sc_send_signal
     var/sc_tick
     var/list/queued_signals = list()
     var/list/queued_returns = list()
     // info about our last tick update
     var/list/last_update = list()
-    // 
+    // errors :()
     var/list/bwoinks = list()
 
 /datum/controller/subsystem/spesscomputers/Initialize()
     // we're working on it
-    sc_init = load_ext("spesscomputers", "byond:spess_init")
     sc_send_signal = load_ext("spesscomputers", "byond:spess_send_signal")
     sc_tick = load_ext("spesscomputers", "byond:spess_tick")
+    call_ext("spesscomputers", "byond:spess_init")(src)
     
 
 /datum/controller/subsystem/spesscomputers/fire(resumed = FALSE)
