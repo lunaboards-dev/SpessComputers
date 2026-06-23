@@ -1,4 +1,4 @@
-local lty = computer.local_tty()
+local lty = computer.tty()
 local vtwrite = function()end
 if lty then
     vtwrite = function(str)
