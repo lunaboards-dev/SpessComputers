@@ -1,7 +1,7 @@
 print("machine.lua")
-local computer = {}
+computer = {}
 
-for k, v in pairs(_computer) do
+for k, v in pairs(getmetatable(_computer).__index) do
   local c = _computer
   local func = v
   computer[k] = function(...)
@@ -639,7 +639,7 @@ xpcall(function()
       end
       tty:write(string.format("%s\t%s\r\n", comp, type))
     end
-    load(computer.eeprom():code())()
+    load(computer.eeprom():code(), "=bios.lua")()
     error("halted")
 end, function(err)
     -- print to vt

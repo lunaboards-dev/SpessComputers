@@ -7,7 +7,7 @@ namespace spesscore.Terminal;
 class Controller
 {
     public Guid gid;
-
+    Computer? comp;
     public void Process(byte[] data)
     {
         string jtext = Encoding.UTF8.GetString(data);
@@ -18,6 +18,9 @@ class Controller
         {
             Computer? c = SpessCore.Instance?.CreateDemoComputer();
             if (c == null) return;
+            if (comp != null)
+                comp.Stop();
+            comp = c;
             string rtext = JsonConvert.SerializeObject(new {command="new_computer", id=c.GetPeripherals("tty").First().ID});
             SpessCore.Instance?.TServ.Server.SendAsync(gid, Encoding.UTF8.GetBytes(rtext));
         }

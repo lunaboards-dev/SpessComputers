@@ -1,4 +1,5 @@
-using KeraLua;
+using static spesscore.VM.Lua;
+using static spesscore.VM.Helpers;
 
 namespace spesscore.VM.Peripheral;
 
@@ -42,15 +43,15 @@ class EEPROM : AbstractPeripheral
         
     }
 
-    int Code(Lua L)
+    int Code(lua_State L)
     {
-        L.PushBuffer(code);
+        lua_pushbytebuffer(L, code);
         return 1;
     }
 
-    int CodeSize(Lua L)
+    int CodeSize(lua_State L)
     {
-        L.PushInteger(code.Length);
+        lua_pushinteger(L, code.Length);
         return 1;
     }
 
@@ -69,28 +70,28 @@ class EEPROM : AbstractPeripheral
         return true; // this can't fail yet
     }
 
-    int ConfigSet(Lua L)
+    int ConfigSet(lua_State L)
     {
-        string key = L.CheckString(2);
-        byte[] value = L.CheckBuffer(3);
-        L.PushBoolean(cfg_set(key, value));
+        string key = luaL_checkstring(L, 2);
+        byte[] value = luaL_checkbytebuffer(L, 3);
+        lua_pushboolean(L, cfg_set(key, value) ? 1 : 0);
         return 1;
     }
 
-    int ConfigGet(Lua L)
+    int ConfigGet(lua_State L)
     {
-        string key = L.CheckString(2);
+        string key = luaL_checkstring(L, 2);
         if (config.TryGetValue(key, out byte[]? val))
         {
-            L.PushBuffer(val);
+            lua_pushbytebuffer(L, val);
             return 1;
         }
         return 0;
     }
 
-    int ConfigSize(Lua L)
+    int ConfigSize(lua_State L)
     {
-        L.PushInteger(config_size);
+        lua_pushinteger(L, config_size);
         return 1;
     }
 }

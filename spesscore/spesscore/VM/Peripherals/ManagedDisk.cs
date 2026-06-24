@@ -1,6 +1,7 @@
 
 using System.Data.SQLite;
-using KeraLua;
+using static spesscore.VM.Lua;
+using static spesscore.VM.Helpers;
 
 namespace spesscore.VM.Peripheral;
 
@@ -65,7 +66,7 @@ class ManagedDisk : AbstractPeripheral
             );");
     }
 
-    int PushResultTuple(Lua L, SQLiteDataReader reader)
+    /* int PushResultTuple(Lua L, SQLiteDataReader reader)
     {
         int cols = reader.FieldCount;
         for (int i=0;i<cols;++i)
@@ -84,7 +85,7 @@ class ManagedDisk : AbstractPeripheral
                     break;
                 /* case TypeAffinity.Text:
                     L.PushString(reader.GetString(i));
-                    break; */
+                    break; * /
                 case TypeAffinity.Blob:
                     var blob = reader.GetBlob(i, true);
                     int size = blob.GetCount();
@@ -234,7 +235,7 @@ class ManagedDisk : AbstractPeripheral
     int Query(Lua L)
     {
         return 0;
-    }
+    } */
 
     public override void Destroy()
     {

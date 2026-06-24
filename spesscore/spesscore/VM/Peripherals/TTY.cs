@@ -1,5 +1,6 @@
 
-using KeraLua;
+using static spesscore.VM.Lua;
+using static spesscore.VM.Helpers;
 using spesscore.Terminal;
 
 namespace spesscore.VM.Peripheral;
@@ -30,16 +31,16 @@ class TTY : AbstractPeripheral
         buffer.Write(bytes);
     }
 
-    int Write(Lua L)
+    int Write(lua_State L)
     {
-        byte[] str = L.CheckBuffer(2);
+        byte[] str = luaL_checkbytebuffer(L, 2);
         listener?.Write(str);
         return 0;
     }
 
-    int BufferSize(Lua L)
+    int BufferSize(lua_State L)
     {
-        L.PushInteger(buffer.Count);
+        lua_pushinteger(L, buffer.Count);
         return 1;
     }
 

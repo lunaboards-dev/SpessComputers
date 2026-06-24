@@ -1,10 +1,10 @@
-using KeraLua;
+using LuaNET.Lua54;
 
 namespace spesscore.VM.Peripheral;
 
 interface IPeripheral
 {
-    public delegate int PeripheralCallback(Lua L);
+    public delegate int PeripheralCallback(lua_State L);
     Dictionary<string, PeripheralCallback> Callbacks { get; }
     string PeripheralName { get; }
     string ID { get; set; }

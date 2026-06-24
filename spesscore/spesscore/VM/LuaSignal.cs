@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
-using KeraLua;
+using static spesscore.VM.Lua;
+using static spesscore.VM.Helpers;
 
 namespace spesscore.VM;
 
@@ -9,27 +10,27 @@ struct LuaSignal
     public string Sender;
     public object[] args;
 
-    public int Push(Lua L)
+    public int Push(lua_State L)
     {
-        L.PushString(Name);
-        L.PushString(Sender);
+        lua_pushstring(L, Name);
+        lua_pushstring(L, Sender);
         foreach (object o in args)
         {
             if (o is string str)
             {
-                L.PushString(str);
+                lua_pushstring(L, str);
             } else if (o is long ival)
             {
-                L.PushInteger(ival);
+                lua_pushinteger(L, ival);
             } else if (o is double dval)
             {
-                L.PushNumber(dval);
+                lua_pushnumber(L, dval);
             } else if (o is bool bval)
             {
-                L.PushBoolean(bval);
+                lua_pushboolean(L, bval ? 1 : 0);
             } else
             {
-                L.PushNil();
+                lua_pushnil(L);
             }
         }
         return args.Length+2;
