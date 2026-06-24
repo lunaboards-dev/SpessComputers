@@ -19,6 +19,7 @@
   <ItemGroup>
     <EmbeddedResource Include="machine.lua" />
     <EmbeddedResource Include="bios.lua" />
+    <EmbeddedResource Include="rare_fox.six" />
   </ItemGroup>
 
 </Project>

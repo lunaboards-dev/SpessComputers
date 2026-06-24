@@ -101,7 +101,7 @@ class Computer
     static int PeripheralList(lua_State L)
     {
         Computer c = lua_ToObject<Computer>(L, 1);//L.ToObject<Computer>(1, false);
-        if (lua_isnil(L, 2) != 0)
+        if (lua_isnil(L, 2))
         {
             lua_PushObjectManaged(L, c.Peripherals);
             lua_pushinteger(L, 0);
@@ -146,6 +146,22 @@ class Computer
         return 1;
     }
 
+    static lua_CFunction RamTotalDel = GetMemory;
+    static int GetMemory(lua_State L)
+    {
+        Computer c = lua_ToObject<Computer>(L, 1);
+        lua_pushinteger(L, c.max_memory);
+        return 1;
+    }
+
+    static lua_CFunction RamUseDel = GetUsedMemory;
+    static int GetUsedMemory(lua_State L)
+    {
+        Computer c = lua_ToObject<Computer>(L, 1);
+        lua_pushinteger(L, c.currently_allocated);
+        return 1;
+    }
+
     void InitLuaState()
     {
         Console.WriteLine("LUA OPEN");
@@ -182,6 +198,23 @@ class Computer
         lua_pushstring(L, "disk");
         lua_pushcfunction(L, GetDskDel);
         lua_settable(L, -3);
+
+        Console.WriteLine("LUA fox");
+        lua_pushstring(L, "rare_fox");
+        lua_pushcfunction(L, RareFoxDel);
+        lua_settable(L, -3);
+
+        lua_pushstring(L, "mem_total");
+        lua_pushcfunction(L, RamTotalDel);
+        lua_settable(L, -3);
+
+        lua_pushstring(L, "mem_used");
+        lua_pushcfunction(L, RamUseDel);
+        lua_settable(L, -3);
+
+        lua_pushstring(L, "set_mem_baseline");
+        lua_pushcfunction(L, SetMemBase);
+        lua_settable(L, -3);
         
         lua_settable(L, -3);
 
@@ -213,6 +246,21 @@ class Computer
         }
         return value(L);
     }
+
+    static lua_CFunction RareFoxDel = RareFox;
+    static int RareFox(lua_State L)
+    {
+        lua_pushbytebuffer(L, SpessCore.Instance.RareFox);
+        return 1;
+    }
+
+    static lua_CFunction SetMemBase = SetMemoryBaseline;
+    static int SetMemoryBaseline(lua_State L)
+    {
+        Computer c = lua_ToObject<Computer>(L, 1);
+        c.currently_allocated = 0;
+        return 0;
+    } // DO NOT EXPOSE THIS
 
     void PushPeripheral<T>(lua_State l, T p) where T : IPeripheral
     {
@@ -298,8 +346,7 @@ class Computer
     {
         string str = lua_tostring(L, 1);
         luaL_traceback(L, L, str, 1);
-        //ctx.Traceback(ctx, str, 1);
-        string traceback = luaL_checkstring(L, -1);//ctx.ToString(-1);
+        string traceback = luaL_checkstring(L, -1);
         SpessCore.Instance?.Bwoinks.Add(traceback);
         Console.WriteLine("Uncaught error: "+traceback);
         return 0;
@@ -312,7 +359,11 @@ class Computer
             active = true;
             lua_pushcfunction(L, BwoinkDel);
             //luaL_loadstring(L, Encoding.UTF8.GetString(SpessCore.Instance?.MachineLua));
-            luaL_loadbuffer(L, SpessCore.Instance?.MachineLua, (uint)SpessCore.Instance?.MachineLua.Length, "=machine.lua");
+            luaL_loadbufferx(L, SpessCore.Instance?.MachineLua, (uint)SpessCore.Instance?.MachineLua.Length, "=machine.lua", "t");
+            if (lua_type(L, -1) != LUA_TFUNCTION)
+            {
+                throw new Exception("Failed to load machine.lua: "+lua_tostring(L, -1));
+            }
             //L.LoadBuffer(SpessCore.Instance?.MachineLua, "=machine.lua");
             lua_pcall(L, 0, 0, -2);//L.PCall(0, 0, -2);
         } catch (Exception e)

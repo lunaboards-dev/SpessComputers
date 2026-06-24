@@ -46,7 +46,7 @@ static class Helpers
 
     unsafe public static T? lua_ToObject<T>(lua_State L, int idx)
     {
-        if (lua_isuserdata(L, idx) == 0) return default;
+        if (lua_isuserdata(L, idx)) return default;
         var box = lua_touserdata(L, idx);
         if (box == nuint.Zero) return default;
         var ptr = (nint*)box;

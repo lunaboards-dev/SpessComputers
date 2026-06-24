@@ -2,10 +2,30 @@
     <head>
         <title>SpessComputers emulator</title>
         <link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css">
+        <style>
+            body {
+                background-color: #333;
+                text-align: center;
+            }
+
+            .container {
+                display: inline-block;
+                text-align: left;
+                background-color: beige;
+                padding: 1em;
+            }
+
+            #container {
+                padding: 1em;
+                background-color: black;
+            }
+        </style>
     </head>
     <body>
-        <div id="container"></div>
-        <button id="new">New computer</button><button id="pwr">Power</button><button id="hpwr">Hard power</button>
+        <div class="container">
+            <div id="container"></div>
+            <button id="new">New computer</button><button id="pwr">Power</button><button id="hpwr">Hard power</button>
+        </div>
         <script src="emu.mjs" type="module"></script>
     </body>
 </html>

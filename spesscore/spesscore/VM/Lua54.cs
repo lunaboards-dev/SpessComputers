@@ -237,19 +237,19 @@ public static class Lua
 	public static extern void lua_xmove(lua_State L, lua_State to, int n);
 	
 	[DllImport(DllName, CallingConvention = Convention)]
-	public static extern int lua_isnumber(lua_State L, int idx);
+	public static extern bool lua_isnumber(lua_State L, int idx);
 	
 	[DllImport(DllName, CallingConvention = Convention)]
-	public static extern int lua_isstring(lua_State L, int idx);
+	public static extern bool lua_isstring(lua_State L, int idx);
 	
 	[DllImport(DllName, CallingConvention = Convention)]
-	public static extern int lua_iscfunction(lua_State L, int idx);
+	public static extern bool lua_iscfunction(lua_State L, int idx);
 	
 	[DllImport(DllName, CallingConvention = Convention)]
-	public static extern int lua_isinteger(lua_State L, int idx);
+	public static extern bool lua_isinteger(lua_State L, int idx);
 	
 	[DllImport(DllName, CallingConvention = Convention)]
-	public static extern int lua_isuserdata(lua_State L, int idx);
+	public static extern bool lua_isuserdata(lua_State L, int idx);
 	
 	[DllImport(DllName, CallingConvention = Convention)]
 	public static extern int lua_type(lua_State L, int idx);
@@ -502,7 +502,7 @@ public static class Lua
 	public static extern int lua_status(lua_State L);
 	
 	[DllImport(DllName, CallingConvention = Convention)]
-	public static extern int lua_isyieldable(lua_State L);
+	public static extern bool lua_isyieldable(lua_State L);
 	
 	public static int lua_yield(lua_State L, int n)
 	{
@@ -539,7 +539,7 @@ public static class Lua
 	public static extern int lua_error(lua_State L);
 	
 	[DllImport(DllName, CallingConvention = Convention)]
-	public static extern int lua_next(lua_State L, int idx);
+	public static extern bool lua_next(lua_State L, int idx);
 	
 	[DllImport(DllName, CallingConvention = Convention)]
 	public static extern void lua_concat(lua_State L, int n);
@@ -604,44 +604,44 @@ public static class Lua
 		lua_pushcclosure(L, f, 0);
 	}
 	
-	public static int lua_isfunction(lua_State L, int n)
+	public static bool lua_isfunction(lua_State L, int n)
 	{
-		return (lua_type(L, n) == LUA_TFUNCTION) ? 1 : 0;
+		return (lua_type(L, n) == LUA_TFUNCTION);
 	}
 	
-	public static int lua_istable(lua_State L, int n)
+	public static bool lua_istable(lua_State L, int n)
 	{
-		return (lua_type(L, n) == LUA_TTABLE) ? 1 : 0;
+		return (lua_type(L, n) == LUA_TTABLE);
 	}
 	
-	public static int lua_islightuserdata(lua_State L, int n)
+	public static bool lua_islightuserdata(lua_State L, int n)
 	{
-		return (lua_type(L, n) == LUA_TLIGHTUSERDATA) ? 1 : 0;
+		return (lua_type(L, n) == LUA_TLIGHTUSERDATA);
 	}
 	
-	public static int lua_isnil(lua_State L, int n)
+	public static bool lua_isnil(lua_State L, int n)
 	{
-		return (lua_type(L, n) == LUA_TNIL) ? 1 : 0;
+		return (lua_type(L, n) == LUA_TNIL);
 	}
 	
-	public static int lua_isboolean(lua_State L, int n)
+	public static bool lua_isboolean(lua_State L, int n)
 	{
-		return (lua_type(L, n) == LUA_TBOOLEAN) ? 1 : 0;
+		return (lua_type(L, n) == LUA_TBOOLEAN);
 	}
 	
-	public static int lua_isthread(lua_State L, int n)
+	public static bool lua_isthread(lua_State L, int n)
 	{
-		return (lua_type(L, n) == LUA_TTHREAD) ? 1 : 0;
+		return (lua_type(L, n) == LUA_TTHREAD);
 	}
 	
-	public static int lua_isnone(lua_State L, int n)
+	public static bool lua_isnone(lua_State L, int n)
 	{
-		return (lua_type(L, n) == LUA_TNONE) ? 1 : 0;
+		return (lua_type(L, n) == LUA_TNONE);
 	}
 	
-	public static int lua_isnoneornil(lua_State L, int n)
+	public static bool lua_isnoneornil(lua_State L, int n)
 	{
-		return (lua_type(L, n) <= 0) ? 1 : 0;
+		return (lua_type(L, n) <= 0);
 	}
 	
 	public static string? lua_pushliteral(lua_State L, string s)
@@ -998,7 +998,7 @@ public static class Lua
 	
 	public static T luaL_opt<T>(lua_State L, luaL_Function<T> f, int n, T d)
 	{
-		return lua_isnoneornil(L, n) > 0 ? d : f(L, n);
+		return lua_isnoneornil(L, n) ? d : f(L, n);
 	}
 	
 	public static int luaL_loadbuffer(lua_State L, byte[] s, size_t sz, string n)

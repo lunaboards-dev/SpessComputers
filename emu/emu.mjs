@@ -1,10 +1,12 @@
 import {Terminal} from "./node_modules/@xterm/xterm/lib/xterm.mjs";
+import { ImageAddon } from "./node_modules/@xterm/addon-image/lib/addon-image.mjs";
 
 const term = new Terminal({
     cols: 80,
-    rows: 60
+    rows: 25
 });
 
+term.loadAddon(new ImageAddon());
 term.open(document.getElementById("container"));
 
 let ws;

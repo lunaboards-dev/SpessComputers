@@ -17,9 +17,25 @@ class SpessCore
     Dictionary<string, IPeripheral> Peripherals = [];
     public TerminalServer TServ;
     public byte[] MachineLua;
+    public byte[] RareFox;
 
     public static SpessCore? Instance;
     Socket ipc;
+
+    byte[] TryRead(string path)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        using var str = assembly.GetManifestResourceStream(path);
+        if (str == null)
+        {
+            // billions must die
+            Console.Error.WriteLine("shit's fucked, can't find machine.lua");
+            Environment.Exit(-1);
+        }
+        byte[] tmp = new byte[str.Length];
+        str.Read(tmp);
+        return tmp;
+    }
 
     public SpessCore()
     {
@@ -29,16 +45,8 @@ class SpessCore
         ipc.Bind(endpoint);
         ipc.Listen();
         TServ = new((ushort)Config.WebsocketPort); // if you set this higher than 0xFFFF i will kill you
-        var assembly = Assembly.GetExecutingAssembly();
-        using var str = assembly.GetManifestResourceStream("spesscore.machine.lua");
-        if (str == null)
-        {
-            // billions must die
-            Console.Error.WriteLine("shit's fucked, can't find machine.lua");
-            Environment.Exit(-1);
-        }
-        MachineLua = new byte[str.Length];
-        str.Read(MachineLua);
+        MachineLua = TryRead("spesscore.machine.lua");
+        RareFox = TryRead("spesscore.rare_fox.six");
         TaskScheduler.UnobservedTaskException += (sender, args) => {
             string err = args.Exception.ToString();
             Console.Error.WriteLine("KILL: "+err);

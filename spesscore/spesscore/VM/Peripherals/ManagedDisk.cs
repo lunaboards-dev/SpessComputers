@@ -66,7 +66,7 @@ class ManagedDisk : AbstractPeripheral
             );");
     }
 
-    /* int PushResultTuple(Lua L, SQLiteDataReader reader)
+    int PushResultTuple(lua_State L, SQLiteDataReader reader)
     {
         int cols = reader.FieldCount;
         for (int i=0;i<cols;++i)
@@ -75,26 +75,26 @@ class ManagedDisk : AbstractPeripheral
             {
                 case TypeAffinity.Uninitialized:
                 case TypeAffinity.Null:
-                    L.PushNil();
+                    lua_pushnil(L);
                     break;
                 case TypeAffinity.Int64:
-                    L.PushInteger(reader.GetInt64(i));
+                    lua_pushinteger(L, reader.GetInt64(i));
                     break;
                 case TypeAffinity.Double:
-                    L.PushNumber(reader.GetDouble(i));
+                    lua_pushnumber(L, reader.GetDouble(i));
                     break;
                 /* case TypeAffinity.Text:
                     L.PushString(reader.GetString(i));
-                    break; * /
+                    break; */
                 case TypeAffinity.Blob:
                     var blob = reader.GetBlob(i, true);
                     int size = blob.GetCount();
                     byte[] buffer = new byte[size];
                     blob.Read(buffer, size, 0);
-                    L.PushBuffer(buffer);
+                    lua_pushbytebuffer(L, buffer);
                     break;
                 default:
-                    L.PushString(reader.GetString(i));
+                    lua_pushstring(L, reader.GetString(i));
                     break;
             }
         }
@@ -102,44 +102,44 @@ class ManagedDisk : AbstractPeripheral
         return cols;
     }
 
-    SQLiteCommand GenStatement(Lua L, int query, string statement)
+    SQLiteCommand GenStatement(lua_State L, int query, string statement)
     {
         // no table? then fuck off
-        if (L.IsNil(query))
+        if (lua_isnil(L, query))
         {
             SQLiteCommand cmd = new(statement + ";", db);
             return cmd;
         }
-        L.CheckType(query, LuaType.Table);
+        luaL_checktype(L, query, LUA_TTABLE);
         List<string> keys = [];
         // this is effectively `for k,v in pairs(tbl) do ... end`
-        L.PushNil();
-        while (L.Next(query))
+        lua_pushnil(L);
+        while (lua_next(L, query))
         {
-            if (L.IsString(-2))
+            if (lua_isstring(L, -2))
             {
-                string key = L.ToString(-2);
-                switch (L.Type(-1))
+                string key = lua_tostring(L, -2);
+                switch (lua_type(L, -1))
                 {
-                    case LuaType.String:
+                    case LUA_TSTRING:
                         //keys.Add($"{key}='@{key}'");
                         //break;
-                    case LuaType.Number:
-                    case LuaType.Boolean:
+                    case LUA_TNUMBER:
+                    case LUA_TBOOLEAN:
                         keys.Add($"{key}=@{key}");
                         break;
                     default:
-                        L.Error($"Cannot serialzie type {L.Type(-1)}!");
+                        luaL_error(L, $"Cannot serialzie type {luaL_typename(L, -1)}!");
                         break;
                 }
             } else
             {
-                L.Error($"Invalid key type {L.Type(-2)}");
+                luaL_error(L, $"Invalid key type {luaL_typename(L, -2)}");
             }
 
-            L.Pop(1);
+            lua_pop(L, 1);
         }
-        L.Pop(1); // we don't need that key anymore
+        lua_pop(L, 1); // we don't need that key anymore
 
         string _rtv = statement + " WHERE " + string.Join(" AND ", keys) + " LIMIT 1;";
         SQLiteCommand rtv = new(_rtv, db);
@@ -147,47 +147,47 @@ class ManagedDisk : AbstractPeripheral
         // wanna see me do it again?
         foreach (string key in keys)
         {
-            L.PushString(key);
-            L.GetTable(query);
-            switch (L.Type(-1))
+            lua_pushstring(L, key);
+            lua_gettable(L, query);
+            switch (lua_type(L, -1))
             {
-                case LuaType.String:
+                case LUA_TSTRING:
                     rtv.Parameters.Add(new SQLiteParameter("@"+key, System.Data.DbType.String) // yeah this looks horirble
                     {
-                        Value = L.ToString(-1)
+                        Value = lua_tostring(L, -1)
                     });
                     break;
-                case LuaType.Number:
-                    if (L.IsInteger(-1))
+                case LUA_TNUMBER:
+                    if (lua_isinteger(L, -1))
                     {
                         rtv.Parameters.Add(new SQLiteParameter("@"+key, System.Data.DbType.Int64)
                         {
-                            Value = L.ToInteger(-1)
+                            Value = lua_tointeger(L, -1)
                         });
                     } else
                     {
                         rtv.Parameters.Add(new SQLiteParameter("@"+key, System.Data.DbType.Double)
                         {
-                            Value = L.ToNumber(-1)
+                            Value = lua_tonumber(L, -1)
                         });
                     }
                     break;
-                case LuaType.Boolean:
+                case LUA_TBOOLEAN:
                     rtv.Parameters.Add(new SQLiteParameter("@"+key, System.Data.DbType.Boolean)
                     {
-                        Value = L.ToBoolean(-1)
+                        Value = lua_toboolean(L, -1)
                     });
                     break;
             }
-            L.Pop(1);
+            lua_pop(L, 1);
         }
-        L.Pop(1);
+        lua_pop(L, 1);
         return rtv;
     }
 
-    int Select(Lua L)
+    int Select(lua_State L)
     {
-        string table = L.CheckString(2);
+        string table = luaL_checkstring(L, 2);
         var query = GenStatement(L, 3, $"SELECT * FROM '@DBTBL");
         query.Parameters.Add(new SQLiteParameter("@DBTBL", System.Data.DbType.String)
         {
@@ -197,45 +197,45 @@ class ManagedDisk : AbstractPeripheral
         return PushResultTuple(L, reader);
     }
 
-    int Insert(Lua L)
+    int Insert(lua_State L)
     {
         return 0;
     }
 
-    int Update(Lua L)
+    int Update(lua_State L)
     {
         return 0;
     }
 
-    int Delete(Lua L)
+    int Delete(lua_State L)
     {
         return 0;
     }
 
-    int CreateTable(Lua L)
+    int CreateTable(lua_State L)
     {
         return 0;
     }
 
-    int DeleteTable(Lua L)
+    int DeleteTable(lua_State L)
     {
         return 0;
     }
 
-    int Capacity(Lua L)
+    int Capacity(lua_State L)
     {
         return 0;
     }
 
-    int Usage(Lua L)
+    int Usage(lua_State L)
     {
         return 0;
     }
 
-    int Query(Lua L)
+    int Query(lua_State L)
     {
         return 0;
-    } */
+    }
 
     public override void Destroy()
     {
