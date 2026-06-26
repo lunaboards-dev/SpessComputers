@@ -3,13 +3,14 @@ using static spesscore.VM.Lua;
 using static spesscore.VM.Helpers;
 using spesscore.Terminal;
 using System.Text;
+using Cyotek.Collections.Generic;
 
 namespace spesscore.VM.Peripheral;
 
 class TTY : AbstractPeripheral
 {
     override public Dictionary<string, IPeripheral.PeripheralCallback> Callbacks => callbacks;
-    RingBuffer<byte> buffer = new(1024); // if you don't process 1KiB of inputs in time, that's on you.
+    CircularBuffer<byte> buffer = new(1024, true); // if you don't process 1KiB of inputs in time, that's on you.
     TerminalListener? listener;
 
     Dictionary<string, IPeripheral.PeripheralCallback> callbacks;
@@ -32,8 +33,8 @@ class TTY : AbstractPeripheral
 
     public void FillBuffer(byte[] bytes)
     {
-        buffer.Write(bytes);
-        Console.WriteLine($"bytes: {bytes.Length}, buffer size: {buffer.Count}");
+        buffer.Put(bytes);
+        Console.WriteLine($"bytes: {bytes.Length}, buffer size: {buffer.Size}");
     }
 
     public void Write(string str)
@@ -44,7 +45,7 @@ class TTY : AbstractPeripheral
     int Read(lua_State L)
     {
         long amt = luaL_checkinteger(L, 2);
-        byte[] dat = buffer.Read((uint)amt);
+        byte[] dat = buffer.Get((int)amt);
         lua_pushbytebuffer(L, dat);
         return 1;
     }
@@ -52,29 +53,31 @@ class TTY : AbstractPeripheral
     int Write(lua_State L)
     {
         byte[] str = luaL_checkbytebuffer(L, 2);
+        if (str.Length == 0) return 0;
         listener?.Write(str);
         return 0;
     }
 
     int BufferSize(lua_State L)
     {
-        lua_pushinteger(L, buffer.Count);
+        lua_pushinteger(L, buffer.Size);
         return 1;
     }
 
     int NextInput(lua_State L)
     {
         List<byte> rbuf = [];
-        byte? fb = buffer.Next();
-        if (fb == null) return 0;
+        if (buffer.IsEmpty) return 0;
+        byte fb = buffer.Get();
         if (fb != 27)
         {
-            lua_pushbytebuffer(L, [fb.Value]);
+            lua_pushbytebuffer(L, [fb]);
+            return 1;
         }
-        byte? b;
-        while ((b = buffer.Next()) != null)
+        rbuf.Add(fb);
+        while (!buffer.IsEmpty)
         {
-            byte bv = b.Value;
+            byte bv = buffer.Get();
             rbuf.Add(bv);
             char cv = (char)bv;
             if (char.IsAsciiLetter(cv))

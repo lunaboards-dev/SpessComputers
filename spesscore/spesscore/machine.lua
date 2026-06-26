@@ -1,5 +1,5 @@
 print("machine.lua")
-computer = {}
+--[[ computer = {}
 
 local c = _computer
 for k, v in pairs(getmetatable(_computer).__index) do
@@ -8,7 +8,7 @@ for k, v in pairs(getmetatable(_computer).__index) do
 		return v(c, ...)
 	end
 end
-_computer = nil
+_computer = nil ]]
 -- we do all the init here
 
 -- taken straight from OC's machine.lua
@@ -631,24 +631,31 @@ do
 end
 
 local preempt = computer.preempt
+local set_thd = computer.set_current_thread
+local thd_resume = computer.thd_resume
 computer.preempt = nil
+computer.set_thd = nil
+computer.thd_resume = nil
 
 -- wrap coro library
 local coro = coroutine
 local cr = {}
 
 function cr.resume(co, ...)
-	local rtv = table.pack(coro.resume(co, ...))
+	local rtv = table.pack(thd_resume(co, ...))
 	while preempt() do -- Yields the current coroutine if the child one was yielded
-		coro.resume(co) -- resumes it once the parent one has resumed
+		cr.yield()
+		thd_resume(co) -- resumes it once the parent one has resumed
 	end
 	return table.unpack(rtv)
 end
 
 function cr.kresume(co, ...)
-	local rtv = table.pack(coro.resume(co, ...))
+	local rtv = table.pack(thd_resume(co, ...))
 	if not preempt() then -- if this isn't a preempt yield, the values are valid
 		return table.unpack(rtv)
+	else
+		computer.pull_signal() -- really should have something else for this
 	end
 end
 
@@ -659,9 +666,15 @@ end
 function cr.wrap(fun)
 	local co = cr.create()
 	return function(...)
-		
+		return cr.resume(co, ...)
 	end
 end
+
+for k, v in pairs(coro) do
+	if not cr[k] then cr[k] = v end
+end
+
+coroutine = cr
 
 local rare_fox = computer.rare_fox
 computer.rare_fox = nil

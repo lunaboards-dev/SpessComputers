@@ -4,39 +4,45 @@ using spesscore.VM.Peripheral;
 using static spesscore.VM.Lua;
 using static spesscore.VM.Helpers;
 using System.Text;
+using Cyotek.Collections.Generic;
+using spesscore.VM.Libraries;
 
 namespace spesscore.VM;
 
 class Computer
 {
-    int max_memory = 1024*1024;
-    int cpu_speed;
-    int currently_allocated;
-    List<IPeripheral> Peripherals = [];
-    RingBuffer<LuaSignal> events = new((uint)Config.EventBufferSize);
-    TTY? LocalTTY;
+    protected internal int max_memory = 1024*1024;
+    protected internal int cpu_speed;
+    protected internal int currently_allocated;
+    protected internal List<IPeripheral> Peripherals = [];
+    protected internal CircularBuffer<LuaSignal> events = new(Config.EventBufferSize, true);
+    protected internal TTY? LocalTTY;
     public TTY? LocalTerminal => LocalTTY;
     public EEPROM? eeprom;
-    ManagedDisk? Disk;
-    bool running = false;
-    bool init_once = false;
-    bool paused = false;
-    public int SignalCount => (int)events.Count;
+    public ManagedDisk? Disk;
+    protected internal bool running = false;
+    protected internal bool init_once = false;
+    protected internal bool paused = false;
+    public int SignalCount => events.Size;
     public readonly Lock pauselock = new();
+    public readonly Lock Lock = new();
+    protected internal readonly Lock PLL = new();
+    ComputerLib lib;
 
     lua_Alloc MemAlloc;
     lua_Hook PauseExecDel;
 
     public double Deadline;
 
-    lua_State PL;
-    lua_State L;
+    protected internal lua_State PL;
+    protected internal lua_State L;
 
     // cache delegates here
     public Computer()
     {
         MemAlloc = Allocator;
         PauseExecDel = PauseExecution;
+        lib = new(this);
     }
 
     static void DumpStack(lua_State L)
@@ -77,106 +83,6 @@ class Computer
         };
     } */
 
-    static lua_CFunction PerByIdDel = PeripheralById;
-    static int PeripheralById(lua_State L)
-    {
-        Computer? c = lua_ToObject<Computer>(L, 1);
-        string? id = luaL_checkstring(L, 2);
-        var perf = c?.GetPeripheral(id);
-        if (perf == null)
-            return 0;
-        c.PushPeripheral(L, perf);
-        return 1;
-    }
-
-    static lua_CFunction PIterDel = PeripheralIter;
-    static int PeripheralIter(lua_State L)
-    {
-        //Lua L = Lua.FromIntPtr(ptr);
-        List<IPeripheral>? pl = lua_ToObject<List<IPeripheral>>(L, lua_upvalueindex(1));//L.ToObject<List<IPeripheral>>(Lua.UpValueIndex(1), false);
-        long index = lua_tointeger(L, lua_upvalueindex(2));//L.ToInteger(Lua.UpValueIndex(2));
-        if (index == pl?.Count)
-        {
-            return 0;
-        }
-        var p = pl?[(int)index++];
-        lua_pushinteger(L, index);
-        lua_replace(L, lua_upvalueindex(2));//L.Replace(Lua.UpValueIndex(2));
-        lua_pushstring(L, p.ID);//L.PushString(p.ID);
-        lua_pushstring(L, p.PeripheralName);//L.PushString(p.PeripheralName);
-        return 2;
-    }
-
-    static lua_CFunction PerListDel = PeripheralList;
-    static int PeripheralList(lua_State L)
-    {
-        Computer c = lua_ToObject<Computer>(L, 1);//L.ToObject<Computer>(1, false);
-        if (lua_isnil(L, 2))
-        {
-            lua_PushObjectManaged(L, c.Peripherals);
-            lua_pushinteger(L, 0);
-            lua_pushcclosure(L, PIterDel, 2);
-            return 1;
-        } else
-        {
-            string type = luaL_checkstring(L, 2); //L.CheckString(2);
-            List<IPeripheral> pl = c.Peripherals.Where((p) => p.PeripheralName.StartsWith(type)).ToList();
-            lua_PushObjectManaged(L, pl);//L.PushObject(pl);
-            lua_pushinteger(L, 0);//L.PushInteger(0);
-            lua_pushcclosure(L, PIterDel, 2);//L.PushCClosure(PIterDel, 2);
-            return 1;
-        }
-    }
-
-    static lua_CFunction GetROMDel = GetEEPROM;
-    static int GetEEPROM(lua_State L)
-    {
-        Computer c = lua_ToObject<Computer>(L, 1);//L.ToObject<Computer>(1, false);
-        if (c.eeprom == null) return 0;
-        c.PushPeripheral(L, c.eeprom);
-        return 1;
-    }
-
-    static lua_CFunction GetTTYDel = GetTTY;
-    static int GetTTY(lua_State L)
-    {
-        Computer c = lua_ToObject<Computer>(L, 1);//Computer c = L.ToObject<Computer>(1, false);
-        DumpStack(L);
-        if (c == null)
-        {
-            Console.WriteLine("computer is null");
-            return 0;
-        }
-        if (c.LocalTTY == null) return 0;
-        c.PushPeripheral(L, c.LocalTTY);
-        return 1;
-    }
-
-    static lua_CFunction GetDskDel = GetDisk;
-    static int GetDisk(lua_State L)
-    {
-        Computer c = lua_ToObject<Computer>(L, 1);//Computer c = L.ToObject<Computer>(1, false);
-        if (c.Disk == null) return 0;
-        c.PushPeripheral(L, c.Disk);
-        return 1;
-    }
-
-    static lua_CFunction RamTotalDel = GetMemory;
-    static int GetMemory(lua_State L)
-    {
-        Computer c = lua_ToObject<Computer>(L, 1);
-        lua_pushinteger(L, c.max_memory);
-        return 1;
-    }
-
-    static lua_CFunction RamUseDel = GetUsedMemory;
-    static int GetUsedMemory(lua_State L)
-    {
-        Computer c = lua_ToObject<Computer>(L, 1);
-        lua_pushinteger(L, c.currently_allocated);
-        return 1;
-    }
-
     void InitLuaState()
     {
         if (init_once)
@@ -187,79 +93,12 @@ class Computer
         Console.WriteLine("LUA OPEN");
         L = lua_newstate(MemAlloc, 0);//new Lua(Allocator, 0);
         //L = lua_newthread(PL);
-        Console.WriteLine("LUA LIB");
         luaL_openlibs(L);
-        
-        lua_PushObjectManaged(L, this);//L.PushObject(this);
-        lua_newtable(L);//L.NewTable();
-        lua_pushstring(L, "__index");//L.PushString("__index");
-        lua_newtable(L);//L.NewTable();
-        Console.WriteLine("LUA pid");
-        // push functions
-        lua_pushstring(L, "peripheral_by_id");//L.PushString("peripheral_by_id");
-        lua_pushcfunction(L, PerByIdDel);//PushCSFunc(L, PeripheralById);
-        lua_settable(L, -3);//L.SetTable(-3);
-
-        Console.WriteLine("LUA plist");
-        lua_pushstring(L, "peripherals");//L.PushString("peripherals");
-        lua_pushcfunction(L, PerListDel);//PushCSFunc(L, PeripheralList);
-        lua_settable(L, -3);//L.SetTable(-3);
-
-        Console.WriteLine("LUA eeprom");
-        lua_pushstring(L, "eeprom");
-        lua_pushcfunction(L, GetROMDel);
-        lua_settable(L, -3);
-
-        Console.WriteLine("LUA tty");
-        lua_pushstring(L, "tty");
-        lua_pushcfunction(L, GetTTYDel);
-        lua_settable(L, -3);
-
-        Console.WriteLine("LUA disk");
-        lua_pushstring(L, "disk");
-        lua_pushcfunction(L, GetDskDel);
-        lua_settable(L, -3);
-
-        Console.WriteLine("LUA fox");
-        lua_pushstring(L, "rare_fox");
-        lua_pushcfunction(L, RareFoxDel);
-        lua_settable(L, -3);
-
-        lua_pushstring(L, "mem_total");
-        lua_pushcfunction(L, RamTotalDel);
-        lua_settable(L, -3);
-
-        lua_pushstring(L, "mem_used");
-        lua_pushcfunction(L, RamUseDel);
-        lua_settable(L, -3);
-
-        lua_pushstring(L, "set_mem_baseline");
-        lua_pushcfunction(L, SetMemBase);
-        lua_settable(L, -3);
-
-        lua_pushstring(L, "pull_signal");
-        lua_pushcfunction(L, PullSigDel);
-        lua_settable(L, -3);
-        
-        lua_settable(L, -3);
-
-        lua_pushstring(L, "__gc");
-        lua_pushcfunction(L, ReleaseObjectDelegate);
-        lua_settable(L, -3);
-
-        lua_pushstring(L, "__tostring");
-        lua_pushstring(L, "(computer ref)");
-        lua_settable(L, -3);
-
-        lua_setmetatable(L, -2);
-
-        Console.WriteLine("LUA GLOBAL");
-        lua_setglobal(L, "_computer");
-        Console.WriteLine("LUA end");
+        lib.Push(L);
     }
 
     static lua_CFunction PerCallDel = PeripheralCall;
-    static int PeripheralCall(lua_State L)
+    protected internal static int PeripheralCall(lua_State L)
     {
         Computer c = lua_ToObject<Computer>(L, lua_upvalueindex(1));
         IPeripheral p = lua_ToObject<IPeripheral>(L, lua_upvalueindex(2));
@@ -276,42 +115,7 @@ class Computer
         return value(L);
     }
 
-    static lua_CFunction RareFoxDel = RareFox;
-    static int RareFox(lua_State L)
-    {
-        lua_pushbytebuffer(L, SpessCore.Instance.RareFox);
-        return 1;
-    }
-
-    static lua_CFunction SetMemBase = SetMemoryBaseline;
-    static int SetMemoryBaseline(lua_State L)
-    {
-        Computer c = lua_ToObject<Computer>(L, 1);
-        c.currently_allocated = 0;
-        return 0;
-    } // DO NOT EXPOSE THIS
-
-    static lua_CFunction PullSigDel = PullSignal;
-    static int PullSignal(lua_State L)
-    {
-        Computer c = lua_ToObject<Computer>(L, 1);
-        if (lua_type(L, 2) == LUA_TNUMBER)
-        {
-            double dl = lua_tonumber(L, 2);
-            c.Deadline = Times.CurTime + dl;
-        }
-        int res = 0;
-        if (c.SignalCount > 0)
-        {
-            var sig = c.events.Next();
-            var val = sig?.Push(L);
-            if (val != null)
-                res = val.Value;
-        }
-        return lua_yield(L, res); // i hope this doesn't explode
-    }
-
-    void PushPeripheral<T>(lua_State l, T p) where T : IPeripheral
+    protected internal void PushPeripheral<T>(lua_State l, T p) where T : IPeripheral
     {
         lua_PushObjectManaged(L, p);
         lua_newtable(L);
@@ -388,7 +192,7 @@ class Computer
         if (active && !paused) {
             paused = true;
             //Console.WriteLine("Pausing");
-            lua_sethook(L, PauseExecDel, LUA_MASKCOUNT, 1); // this SHOULD be thread safe, believe it or not
+            lock (PLL) lua_sethook(PL, PauseExecDel, LUA_MASKCOUNT, 1); // this SHOULD be thread safe, believe it or not
         }
     }
 
@@ -412,8 +216,10 @@ class Computer
     void PauseExecution(lua_State L, lua_Debug ar)
     {
         //Console.WriteLine("STOP EXEC");
+        Console.WriteLine($"Paused in {ar.currentline}");
         lua_yield(L, 0);
         lua_sethook(L, null, 0, 0);
+        DumpStack(L);
     }
 
     public void Start()
@@ -432,6 +238,7 @@ class Computer
             //L.LoadBuffer(SpessCore.Instance?.MachineLua, "=machine.lua");
             //lua_pcall(L, 0, 0, -2);//L.PCall(0, 0, -2);
             int c = 0;
+            lock(PLL) PL = L;
             lua_resume(L, 0, 0, ref c);
             lua_pop(L, c);
             active = true;
@@ -506,7 +313,7 @@ class Computer
 
     public void PushSignal(LuaSignal signal)
     {
-        events.Add(signal);
+        events.Put(signal);
     }
 
     ~Computer()
