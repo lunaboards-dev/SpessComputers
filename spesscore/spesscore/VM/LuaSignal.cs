@@ -6,6 +6,7 @@ namespace spesscore.VM;
 
 struct LuaSignal
 {
+    public bool Valid;
     public string Name;
     public string Sender;
     public object[] args;

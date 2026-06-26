@@ -1,11 +1,15 @@
 #include "byondapi.h"
 
+#include "json.hpp"
+
 #include <string>
 #include <vector>
 #include <stdarg.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+
+using json = nlohmann::json;
 
 int spess_pid;
 
@@ -145,6 +149,11 @@ extern "C" {
                 // bwoink
                 close(fd);
             } else {
+                CByondValue v = {
+                    .type = NUMBER,
+                    .data = {.ref = fd}
+                };
+                Byond_WriteVar(argv, "socket_fd", &v);
                 return ByondTrue;
             }
         }
@@ -153,6 +162,61 @@ extern "C" {
     }
 
     BYOND_EXPORT CByondValue spess_tick(int argc, CByondValue* argv) {
+        if (argc != 1) return ByondFalse;
+        // acquire the fd i decided to store on the DM side
+        CByondValue v;
+        Byond_ReadVar(argv, "socket_fd", &v);
+
+        CByondValue events;
+        Byond_ReadVar(argv, "queued_events", &events);
+
+        int fd = v.data.ref;
+        // assemble all the info we need
+        json eventj = json::array();
+        u4c evt_len = 0;
+        Byond_ReadList(&events, NULL, &evt_len);
+        CByondValue event_l[evt_len];
+        Byond_ReadList(&events, event_l, &evt_len);
+        for (int i=0; i<evt_len; ++i) {
+            json event = json::array();
+            u4c elen = 0;
+            Byond_ReadList(event_l+i, NULL, &elen);
+            CByondValue edat[elen];
+            Byond_ReadList(event_l+i, edat, &elen);
+            for (int j=0;j<elen;j++) {
+                if (ByondValue_IsNum(edat+j))
+                    event.push_back(edat[j].data.num);
+                else if (ByondValue_IsNull(edat+j))
+                    event.push_back(nullptr);
+                else {
+                    u4c slen = 0;
+                    Byond_ToString(edat+j, NULL, &slen);
+                    char buffer[slen];
+                    Byond_ToString(edat+j, buffer, &slen);
+                    std::string str = buffer;
+                    event.push_back(str);
+                }
+            }
+
+            eventj.push_back(event);
+        }
+        // tell the server we want fuck
+        json pkt = json::object();
+        pkt["signal"] = "tick";
+        pkt["events"] = eventj;
+        std::string jp = pkt.dump();
+        int payload = jp.size();
+        send(fd, &payload, sizeof(int), 0);
+        send(fd, jp.c_str(), jp.size(), 0);
         
+        // wait for server to give us updates
+        int susize = 0;
+        recv(fd, &susize, sizeof(int), 0);
+        char buffer[susize];
+        recv(fd, buffer, susize, 0);
+        std::string sures = buffer;
+        json srvupd = json::parse(sures);
+        // collect bwoinks
+        auto bwoinks = srvupd["bwoinks"];
     }
 }

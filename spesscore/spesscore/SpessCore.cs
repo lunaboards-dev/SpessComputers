@@ -11,16 +11,18 @@ namespace spesscore;
 
 class SpessCore
 {
-    List<Computer> Computers = [];
+    public List<Computer> Computers = [];
     List<Object> PendingCalls = [];
     public List<string> Bwoinks = [];
     Dictionary<string, IPeripheral> Peripherals = [];
     public TerminalServer TServ;
     public byte[] MachineLua;
     public byte[] RareFox;
-
     public static SpessCore? Instance;
+    public LuaExecutionManager Manager;
     Socket ipc;
+
+    long hookspeed = 0;
 
     byte[] TryRead(string path)
     {
@@ -52,6 +54,36 @@ class SpessCore
             Console.Error.WriteLine("KILL: "+err);
             Bwoinks.Add(err);
         };
+        Manager = new();
+        // temp lua state
+        /* lua_State L = Lua.luaL_newstate();
+        Lua.luaL_openlibs(L);
+        byte[] buf = TryRead("spesscore.bogomips.lua");
+        Console.WriteLine(buf.Length);
+        Lua.lua_pushcfunction(L, (c) =>
+        {
+            string err = Lua.lua_tostring(c, 1);
+            Console.WriteLine(err);
+            Bwoinks.Add(err);
+            return 0;
+        });
+        Lua.luaL_loadbufferx(L, buf, (ulong)buf.Length, "=bogomips.lua", "t");
+        if (Lua.lua_type(L, -1) != Lua.LUA_TFUNCTION)
+        {
+            var errstr = "Failed to load machine.lua: "+Lua.lua_tostring(L, -1);
+            Bwoinks.Add(errstr);
+            Console.WriteLine(errstr);
+        }
+        Lua.lua_call(L, 0, 0);
+        if (0 == 0)
+        {
+            Lua.lua_getglobal(L, "_HOOKINT");
+            hookspeed = Lua.luaL_checkinteger(L, -1);
+            Console.WriteLine("Hook speed: "+hookspeed);
+        } else
+        {
+            
+        } */
     }
 
     public string NewID()
@@ -107,14 +139,22 @@ class SpessCore
         AddPeripheral(tty);
         comp.AddPeripheral(tty);
         comp.SetLocalTTY(tty.ID);
+        Computers.Add(comp);
         return comp;
     }
 
     public void Start()
     {
+        Manager.Start();
         // await connection
         // actually don't do anything like a boss
         while (true) {}
         // close if we lose connection
+    }
+
+    public void PushSignal(LuaSignal signal)
+    {
+        if (Peripherals.TryGetValue(signal.Sender, out IPeripheral val))
+            Peripherals[signal.Sender].Computer?.PushSignal(signal);
     }
 }

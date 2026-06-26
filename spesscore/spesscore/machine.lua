@@ -1,8 +1,8 @@
 print("machine.lua")
 computer = {}
 
+local c = _computer
 for k, v in pairs(getmetatable(_computer).__index) do
-	local c = _computer
 	local func = v
 	computer[k] = function(...)
 		return v(c, ...)
@@ -630,14 +630,51 @@ do
 	string.gsub = str_gsub
 end
 
+local preempt = computer.preempt
+computer.preempt = nil
+
+-- wrap coro library
+local coro = coroutine
+local cr = {}
+
+function cr.resume(co, ...)
+	local rtv = table.pack(coro.resume(co, ...))
+	while preempt() do -- Yields the current coroutine if the child one was yielded
+		coro.resume(co) -- resumes it once the parent one has resumed
+	end
+	return table.unpack(rtv)
+end
+
+function cr.kresume(co, ...)
+	local rtv = table.pack(coro.resume(co, ...))
+	if not preempt() then -- if this isn't a preempt yield, the values are valid
+		return table.unpack(rtv)
+	end
+end
+
+function cr.create(fun)
+	return coro.create(fun)
+end
+
+function cr.wrap(fun)
+	local co = cr.create()
+	return function(...)
+		
+	end
+end
+
 local rare_fox = computer.rare_fox
 computer.rare_fox = nil
 
 xpcall(function()
+	print("yerp")
 	local tty = computer.tty()
 	computer.set_mem_baseline()
 	computer.set_mem_baseline = nil
-	load(computer.eeprom():code(), "=bios.lua")()
+	local bios = load(computer.eeprom():code(), "=bios.lua")
+	print("yerp 2")
+	computer.pull_signal()
+	bios()
 	error("halted")
 end, function(err)
 	-- print to vt

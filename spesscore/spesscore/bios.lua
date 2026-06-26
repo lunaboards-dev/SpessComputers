@@ -6,3 +6,16 @@ tty:write(string.format("No storage found."))
 tty:write("(c) NANOTRASEN 2206\r\n")
 tty:write("Only for use on authorized hardware.\r\n")
 tty:write("Strike TAB key to interrupt boot.\r\n")]]
+
+local nm = os.clock()
+local i = 0
+
+tty:write("> ")
+
+while true do
+    local inpt = tty:next()
+    if inpt then
+        print("yerp: "..#inpt)
+        tty:write(inpt)
+    end
+end

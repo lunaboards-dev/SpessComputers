@@ -53,6 +53,12 @@ document.getElementById("pwr").onclick = () => {
     }
 }
 
+document.getElementById("res").onclick = () => {
+    if (ws) {
+        ws.send("\x02"+JSON.stringify({command: "resume"}));
+    }
+}
+
 document.getElementById("hpwr").onclick = () => {
     if (ws) {
         ws.send("\x02"+JSON.stringify({command: "power", hard: true}));

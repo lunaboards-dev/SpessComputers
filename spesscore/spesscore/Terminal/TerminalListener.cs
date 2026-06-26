@@ -17,6 +17,7 @@ class TerminalListener(string id)
 
     internal void Recieved(byte[] data)
     {
+        Console.WriteLine("got data");
         if (OnInput != null)
         {
             OnInput(data);

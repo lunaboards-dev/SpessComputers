@@ -7,12 +7,21 @@ struct RingBuffer<T>(uint size) where T : struct
 
     public T[] Read(uint amt)
     {
+        if (ptr == 0) return [];
         long ramt = Math.Min(amt, size);
         T[] rtv = new T[ramt];
         Array.Copy(buffer, rtv, ramt);
         Array.Copy(buffer, ramt, buffer, 0, size-ramt);
         size -= ramt;
         return rtv;
+    }
+
+    public T? Next()
+    {
+        if (ptr == 0) return default;
+        var res = Read(1);
+        if (res.Length == 0) return default; // ???
+        return res[0];
     }
 
     public uint Write(T[] data)
@@ -36,7 +45,13 @@ struct RingBuffer<T>(uint size) where T : struct
             ptr -= (uint)shift;
         }
         Array.Copy(data, 0, buffer, ptr, dsize);
+        ptr+= (uint)dsize;
         return ptr;
+    }
+
+    public uint Add(T val)
+    {
+        return Write([val]);
     }
 
     public void Clear()

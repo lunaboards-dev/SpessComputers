@@ -497,6 +497,9 @@ public static class Lua
 	
 	[DllImport(DllName, CallingConvention = Convention)]
 	public static extern int lua_resume(lua_State L, lua_State from, int narg, ref int nres);
+
+	[DllImport(DllName, CallingConvention = Convention)]
+	public static extern int lua_resume(lua_State L, nint from, int narg, ref int nres);
 	
 	[DllImport(DllName, CallingConvention = Convention)]
 	public static extern int lua_status(lua_State L);
@@ -746,8 +749,8 @@ public static class Lua
 	public static extern void lua_upvaluejoin(lua_State L, int fidx1, int n1, int fidx2, int n2);
 	
 	[DllImport(DllName, CallingConvention = Convention, EntryPoint = "lua_sethook")]
-	private static extern void _lua_sethook(lua_State L, nint func, int mask, int count);
-	public static void lua_sethook(lua_State L, lua_Hook func, int mask, int count)
+	public static extern void _lua_sethook(lua_State L, nint func, int mask, int count);
+	public static void lua_sethook(lua_State L, lua_Hook? func, int mask, int count)
 	{
 		_lua_sethook(L, func == null ? 0 : Marshal.GetFunctionPointerForDelegate(func), mask, count);
 	}

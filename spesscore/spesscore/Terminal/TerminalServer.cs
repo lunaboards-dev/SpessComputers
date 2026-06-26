@@ -112,6 +112,20 @@ class TerminalServer
                         term?.Computer?.TogglePower(pwr?.hard != null && (bool)pwr?.hard); // who fucking cares if it's null
 #pragma warning restore CS8629 // Nullable value type may be null.
                         return;
+                    } else if (cmd.command == "resume")
+                    {
+                        var term = SpessCore.Instance?.GetPeripheral<TTY>(Listener.ID);
+                        if (term == null || term.Computer == null || term.Computer.LocalTerminal == null)
+                        {
+                            Console.WriteLine($"Something is null! {term} {term?.Computer} {term?.Computer?.LocalTerminal}");
+                        }
+                        if (term?.Computer?.LocalTerminal != term)
+                        {
+                            // mr electric, send this man to the penis explosion chamber
+                            Console.WriteLine($"{cid} sent power from non-local terminal!");
+                            return;
+                        }
+                        term.Computer?.TryResume();
                     }
                     return;
                 }

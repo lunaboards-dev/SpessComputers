@@ -18,15 +18,25 @@ class Computer
     public TTY? LocalTerminal => LocalTTY;
     public EEPROM? eeprom;
     ManagedDisk? Disk;
+    bool running = false;
+    bool init_once = false;
+    bool paused = false;
+    public int SignalCount => (int)events.Count;
+    public readonly Lock pauselock = new();
 
     lua_Alloc MemAlloc;
+    lua_Hook PauseExecDel;
 
+    public double Deadline;
+
+    lua_State PL;
     lua_State L;
 
     // cache delegates here
     public Computer()
     {
         MemAlloc = Allocator;
+        PauseExecDel = PauseExecution;
     }
 
     static void DumpStack(lua_State L)
@@ -132,6 +142,11 @@ class Computer
     {
         Computer c = lua_ToObject<Computer>(L, 1);//Computer c = L.ToObject<Computer>(1, false);
         DumpStack(L);
+        if (c == null)
+        {
+            Console.WriteLine("computer is null");
+            return 0;
+        }
         if (c.LocalTTY == null) return 0;
         c.PushPeripheral(L, c.LocalTTY);
         return 1;
@@ -164,8 +179,14 @@ class Computer
 
     void InitLuaState()
     {
+        if (init_once)
+        {
+            lua_close(L);
+        }
+        init_once = true;
         Console.WriteLine("LUA OPEN");
         L = lua_newstate(MemAlloc, 0);//new Lua(Allocator, 0);
+        //L = lua_newthread(PL);
         Console.WriteLine("LUA LIB");
         luaL_openlibs(L);
         
@@ -215,11 +236,19 @@ class Computer
         lua_pushstring(L, "set_mem_baseline");
         lua_pushcfunction(L, SetMemBase);
         lua_settable(L, -3);
+
+        lua_pushstring(L, "pull_signal");
+        lua_pushcfunction(L, PullSigDel);
+        lua_settable(L, -3);
         
         lua_settable(L, -3);
 
         lua_pushstring(L, "__gc");
         lua_pushcfunction(L, ReleaseObjectDelegate);
+        lua_settable(L, -3);
+
+        lua_pushstring(L, "__tostring");
+        lua_pushstring(L, "(computer ref)");
         lua_settable(L, -3);
 
         lua_setmetatable(L, -2);
@@ -261,6 +290,26 @@ class Computer
         c.currently_allocated = 0;
         return 0;
     } // DO NOT EXPOSE THIS
+
+    static lua_CFunction PullSigDel = PullSignal;
+    static int PullSignal(lua_State L)
+    {
+        Computer c = lua_ToObject<Computer>(L, 1);
+        if (lua_type(L, 2) == LUA_TNUMBER)
+        {
+            double dl = lua_tonumber(L, 2);
+            c.Deadline = Times.CurTime + dl;
+        }
+        int res = 0;
+        if (c.SignalCount > 0)
+        {
+            var sig = c.events.Next();
+            var val = sig?.Push(L);
+            if (val != null)
+                res = val.Value;
+        }
+        return lua_yield(L, res); // i hope this doesn't explode
+    }
 
     void PushPeripheral<T>(lua_State l, T p) where T : IPeripheral
     {
@@ -334,6 +383,15 @@ class Computer
     }
     bool active = false;
     public bool Active => active;
+    public void Pause()
+    {
+        if (active && !paused) {
+            paused = true;
+            //Console.WriteLine("Pausing");
+            lua_sethook(L, PauseExecDel, LUA_MASKCOUNT, 1); // this SHOULD be thread safe, believe it or not
+        }
+    }
+
     // STAHP! NO!
     public void Stop()
     {
@@ -351,13 +409,20 @@ class Computer
         Console.WriteLine("Uncaught error: "+traceback);
         return 0;
     }
+    void PauseExecution(lua_State L, lua_Debug ar)
+    {
+        //Console.WriteLine("STOP EXEC");
+        lua_yield(L, 0);
+        lua_sethook(L, null, 0, 0);
+    }
 
-    async Task Start()
+    public void Start()
     {
         try {
             InitLuaState(); // oh my fucking god bruh
-            active = true;
-            lua_pushcfunction(L, BwoinkDel);
+            //lua_sethook(L, PauseExecDel, LUA_MASKCOUNT, 5000);
+            lua_PushTemporaryObject(L, this);
+            lua_pushcclosure(L, BwoinkDel, 1);
             //luaL_loadstring(L, Encoding.UTF8.GetString(SpessCore.Instance?.MachineLua));
             luaL_loadbufferx(L, SpessCore.Instance?.MachineLua, (uint)SpessCore.Instance?.MachineLua.Length, "=machine.lua", "t");
             if (lua_type(L, -1) != LUA_TFUNCTION)
@@ -365,21 +430,87 @@ class Computer
                 throw new Exception("Failed to load machine.lua: "+lua_tostring(L, -1));
             }
             //L.LoadBuffer(SpessCore.Instance?.MachineLua, "=machine.lua");
-            lua_pcall(L, 0, 0, -2);//L.PCall(0, 0, -2);
+            //lua_pcall(L, 0, 0, -2);//L.PCall(0, 0, -2);
+            int c = 0;
+            lua_resume(L, 0, 0, ref c);
+            lua_pop(L, c);
+            active = true;
         } catch (Exception e)
         {
             Console.Write(e);
+            return;
         }
+        active = true;
     }
 
-    void Pause()
+    bool Resume()
     {
-        
+        //Console.WriteLine("RESUME");
+        int remove = 0;
+        lock(pauselock) {
+            //lua_sethook(L, PauseExecDel, 0, 0);
+            paused = false;
+        }
+        int state = lua_resume(L, 0, 0, ref remove);
+        bool dead = state != LUA_YIELD;
+        if (dead && state != LUA_OK)
+        {
+            string err = lua_tostring(L, -1);
+            LocalTTY.Write("FAILED TO RESUME: "+err);
+        }
+        lua_pop(L, remove);
+        return dead;
     }
 
     public void TogglePower(bool hard)
     {
-        if (active) Stop();
-        else Start();
+        if (active)
+        {
+            if (hard)
+            {
+                Stop();
+            } else
+            {
+                // push signal to VM
+            }
+        } else {
+            Start();
+        }
+    }
+
+    public void TryResume()
+    {
+        Thread.BeginCriticalRegion();
+        if (active && !running)
+        {
+            running = true;
+            SpessCore.Instance.Manager.Running[Thread.CurrentThread.ManagedThreadId] = this;
+            Thread.EndCriticalRegion();
+            try {
+
+                if (Resume())
+                {
+                    active = false; // he ded
+                }
+            }
+            catch (Exception e)
+            {
+                // handle lol
+            }
+            running = false;
+        } else
+        {
+            Thread.EndCriticalRegion();
+        }
+    }
+
+    public void PushSignal(LuaSignal signal)
+    {
+        events.Add(signal);
+    }
+
+    ~Computer()
+    {
+        lua_close(L);
     }
 }
