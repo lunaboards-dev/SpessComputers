@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
+using spesscore.IPC;
 using spesscore.Terminal;
 using spesscore.VM;
 using spesscore.VM.Peripheral;
@@ -146,6 +147,7 @@ class SpessCore
     public void Start()
     {
         Manager.Start();
+        ByondSrc.ProcessPacket(ipc);
         // await connection
         // actually don't do anything like a boss
         while (true) {}
