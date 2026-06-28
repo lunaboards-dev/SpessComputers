@@ -6,31 +6,6 @@ namespace spesscore.IPC;
 
 static class ByondSrc
 {
-    enum SectionType : short
-    {
-        Ping,
-        Pong,
-        Event,
-        GameState,
-        Destroy,
-        Callback,
-        NetCreate,
-        NetAdd,
-        NetRemove,
-        NetDestroy,
-        PeripheralCall,
-        Bwoink,
-        ManagedDiskQuery,
-        ManagedDiskReturn,
-        TapeDataQuery,
-        TapeDataReturn,
-        HolocardRead,
-        HolocardWrite,
-        HolocardReturnR,
-        HolocardReturnW,
-        ComputerPower,
-        GenericPeripheralCall // this will be jank as shit, might be useful though
-    }
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct BasicPacket
     {
