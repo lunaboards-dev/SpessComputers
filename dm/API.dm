@@ -7,6 +7,7 @@
 
     // callback names and proc references
     var/list/callbacks = list();
+    var/list/args = list();
 
     // (you)
     var/holder

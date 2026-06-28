@@ -7,13 +7,6 @@ namespace spesscore.IPC.Sections;
 class Event : IIPCSection
 {
     public SectionType ID => SectionType.Event;
-    enum ArgTypes
-    {
-        Float,
-        String,
-        Array,
-        Map
-    }
     public unsafe bool Read(byte* ptr, int Size, ref int Counter)
     {
         var str = new UnmanagedMemoryStream(ptr, Size);
