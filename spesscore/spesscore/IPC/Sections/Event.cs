@@ -14,15 +14,12 @@ class Event : IIPCSection
         byte[] _id = br.ReadBytes(36);
         string id = Encoding.ASCII.GetString(_id);
         string evname = br.ReadString();
-        byte args = br.ReadByte();
-        for (int i = 0; i < args; i+=4)
-        {
-            
-        }
+        LuaValueList lvl = LuaValueList.Read(br);
+        return true;
     }
 
     public bool Write(MemoryStream stream, ref int Counter)
     {
-        throw new NotImplementedException();
+        throw new NotImplementedException(); // valid crashout
     }
 }
