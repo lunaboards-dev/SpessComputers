@@ -1,6 +1,7 @@
 
 using System.Runtime.InteropServices;
 using System.Text;
+using spesscore.VM.Peripheral;
 
 namespace spesscore.IPC.Sections;
 
@@ -15,6 +16,14 @@ class Event : IIPCSection
         string id = Encoding.ASCII.GetString(_id);
         string evname = br.ReadString();
         LuaValueList lvl = LuaValueList.Read(br);
+        var p = SpessCore.Instance.GetPeripheral<IPeripheral>(id);
+        p?.Computer?.events.Put(new VM.LuaSignal()
+        {
+            Name = evname,
+            Sender = id,
+            Values = lvl,
+            Valid = true
+        });
         return true;
     }
 

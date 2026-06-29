@@ -15,11 +15,12 @@ class LuaValueList
         True,
         False
     }
-    List<Object?> values = [];
+    List<object?> values = [];
+    public int Count => values.Count;
 
     struct IVL
     {
-        public List<Object?> List = [];
+        public List<object?> List = [];
 
         public IVL()
         {

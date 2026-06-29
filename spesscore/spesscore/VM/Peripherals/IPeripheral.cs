@@ -1,5 +1,3 @@
-using LuaNET.Lua54;
-
 namespace spesscore.VM.Peripheral;
 
 interface IPeripheral
