@@ -518,7 +518,7 @@ do
 		local s = strptr(s)
 		local p = strptr(pattern)
 		return function()
-			ms = {
+			local ms = {
 				src_init = s,
 				src_end = s:copy(s:len()),
 				p_end = p:copy(p:len()),
@@ -633,9 +633,11 @@ end
 local preempt = computer.preempt
 local set_thd = computer.set_current_thread
 local thd_resume = computer.thd_resume
+local yield = computer.int_yield
 computer.preempt = nil
 computer.set_thd = nil
 computer.thd_resume = nil
+computer.int_yield = nil
 
 -- wrap coro library
 local coro = coroutine
@@ -655,7 +657,7 @@ function cr.kresume(co, ...)
 	if not preempt() then -- if this isn't a preempt yield, the values are valid
 		return table.unpack(rtv)
 	else
-		computer.pull_signal() -- really should have something else for this
+		yield() -- really should have something else for this
 	end
 end
 
@@ -675,6 +677,18 @@ for k, v in pairs(coro) do
 end
 
 coroutine = cr
+os = {
+	clock = os.clock,
+	date = os.date,
+	difftime = os.difftime,
+	time = os.time
+}
+
+math.randomseed = nil
+
+debug = {
+	traceback = debug.traceback
+}
 
 local rare_fox = computer.rare_fox
 computer.rare_fox = nil
@@ -682,7 +696,7 @@ computer.rare_fox = nil
 xpcall(function()
 	print("yerp")
 	local tty = computer.tty()
-	computer.set_mem_baseline()
+	--computer.set_mem_baseline()
 	computer.set_mem_baseline = nil
 	local bios = load(computer.eeprom():code(), "=bios.lua")
 	print("yerp 2")

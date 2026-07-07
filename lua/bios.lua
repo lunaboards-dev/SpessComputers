@@ -20,17 +20,6 @@ For use on authorized hardware only.
 Strike TAB to interrupt boot
 ]]
 
-local bank = 128
-vtwrite(string.format("MEMORY TEST: %d ...", bank*512))
-while computer.test_bank(bank) do
-    bank = bank + 1
-    vtwrite(string.format("\rMEMORY TEST: %d ...", bank*512))
-end
-
-comptuer.set_mem_size(bank)
-
-print(" \27[1;32mPASSED!\27[0m")
-
 local function finfo(dev, store, name)
     local inode, size = dev:query(string.format("SELECT inode, size FROM meta WHERE store=%q AND name=%q", store, name))
     if not inode then return nil, "not found" end

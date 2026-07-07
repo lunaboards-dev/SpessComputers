@@ -147,7 +147,7 @@ class SpessCore
     public void Start()
     {
         Manager.Start();
-        ByondSrc.ProcessPacket(ipc);
+        //ByondSrc.ProcessPacket(ipc);
         // await connection
         // actually don't do anything like a boss
         while (true) {}

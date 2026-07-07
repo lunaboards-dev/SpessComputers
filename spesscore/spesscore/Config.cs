@@ -15,6 +15,7 @@ public static class Config
     public static int MaxSystemMemory;
     public static bool NoCreateDefaultTables;
     public static bool DebugEnableControlWS; // YOU SHOULD NEVER EVER EVER USE THIS IN PRODUCTION
+    public static bool AllowCustomEEPROMCode;
 
     static void TrySet(Dictionary<string,string> keys, string key, string fallback, out string value)
     {
@@ -60,6 +61,7 @@ public static class Config
         DebugAllowGCHooks = flags.Contains("debugallowgchooks");
         DebugUseNativePatternMatching = flags.Contains("debugusenativepatternmatching");
         NoCreateDefaultTables = flags.Contains("nocreatedefaulttables");
+        AllowCustomEEPROMCode = flags.Contains("allowcustomeepromcode");
         DebugEnableControlWS = true;//flags.Contains("debugenablecontrolws"); // IF YOU USE THIS IN PROD I WILL KILL YOU
                                                                        // LIKELY WITH A BALLPEEN HAMMER
 

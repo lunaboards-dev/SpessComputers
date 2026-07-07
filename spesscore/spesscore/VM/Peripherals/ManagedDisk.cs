@@ -10,6 +10,8 @@ class ManagedDisk : AbstractPeripheral
     SQLiteConnection? db;
     int capacity = 0;
     bool can_pragma = false;
+    bool paused = false;
+    public bool IsValid => Computer != null;
 
     public override Dictionary<string, IPeripheral.PeripheralCallback> Callbacks => throw new NotImplementedException();
 
@@ -35,6 +37,27 @@ class ManagedDisk : AbstractPeripheral
         }
     }
 
+    void Interrupt(ref ProgressEventArgs args)
+    {
+        args.ReturnCode = SQLiteProgressReturnCode.Interrupt;
+        if (Computer != null) {
+            Computer.PushSignal(new ()
+            {
+                Name = "io_fail",
+                Sender = ID,
+                Valid = true,
+                Values = new("timeout")
+            });
+            Computer.ExitIOWait();
+        }
+    }
+
+    void Progress(object sender, ProgressEventArgs args)
+    {
+        args.ReturnCode = SQLiteProgressReturnCode.Continue;
+
+    }
+
     public override void SetID(string id)
     {
         if (db != null)
@@ -45,13 +68,15 @@ class ManagedDisk : AbstractPeripheral
         }
         db = new SQLiteConnection($"Data Source={id}.db;");
         db.Authorize += Authorize;
+        db.Progress += Progress;
+        db.ProgressOps = 100;
         can_pragma = true;
         ExecuteNonQuery($"PRAGMA page_size=512; PRAGMA max_page_count={capacity*2};");
         can_pragma = false;
         if (!Config.NoCreateDefaultTables)
             ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS FileMetadata (
                 Inode INTEGER PRIMARY KEY AUTOINCREMENT,
-                Store STRING,
+                Parent INTEGER,
                 Filename STRING NOT NULL,
                 User INTEGER NOT NULL,
                 Group INTEGER NOT NULL,
@@ -62,7 +87,9 @@ class ManagedDisk : AbstractPeripheral
             CREATE TABLE IF NOT EXISTS FileData (
                 Inode INTEGER NOT NULL,
                 Block INTEGER NOT NULL,
-                Data BLOB NOT NULL
+                Data BLOB NOT NULL,
+
+                FOREIGN KEY (Inode) REFERENCES FileMetadata(Inode)
             );");
     }
 
@@ -185,6 +212,15 @@ class ManagedDisk : AbstractPeripheral
         return rtv;
     }
 
+    async Task ExecuteQuery(SQLiteCommand cmd)
+    {
+        var read = cmd.ExecuteReader();
+        if (read.IsClosed)
+        {
+            
+        }
+    }
+
     int Select(lua_State L)
     {
         string table = luaL_checkstring(L, 2);
@@ -234,11 +270,19 @@ class ManagedDisk : AbstractPeripheral
 
     int Query(lua_State L)
     {
-        return 0;
+        return lua_yield(L, 0);
     }
 
     public override void Destroy()
     {
         throw new NotImplementedException();
     }
+
+    // generic fs methods
+    int Open(lua_State S)
+    {
+        return 0;
+    }
+
+    
 }

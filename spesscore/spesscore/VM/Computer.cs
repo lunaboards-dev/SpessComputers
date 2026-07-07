@@ -12,17 +12,18 @@ namespace spesscore.VM;
 class Computer
 {
     protected internal int max_memory = 1024*1024;
-    protected internal int cpu_speed;
-    protected internal int currently_allocated;
+    protected internal int currently_allocated = 0;
     protected internal List<IPeripheral> Peripherals = [];
     protected internal CircularBuffer<LuaSignal> events = new(Config.EventBufferSize, true);
     protected internal TTY? LocalTTY;
     public TTY? LocalTerminal => LocalTTY;
     public EEPROM? eeprom;
     public ManagedDisk? Disk;
+    // this really should be a bitfield
     protected internal bool running = false;
     protected internal bool init_once = false;
     protected internal bool paused = false;
+    protected internal bool iowait = false;
     public int SignalCount => events.Size;
     public readonly Lock pauselock = new();
     public readonly Lock Lock = new();
@@ -100,10 +101,12 @@ class Computer
     static lua_CFunction PerCallDel = PeripheralCall;
     protected internal static int PeripheralCall(lua_State L)
     {
-        Computer c = lua_ToObject<Computer>(L, lua_upvalueindex(1));
-        IPeripheral p = lua_ToObject<IPeripheral>(L, lua_upvalueindex(2));
+        Computer? c = lua_ToObject<Computer>(L, lua_upvalueindex(1));
+        IPeripheral? p = lua_ToObject<IPeripheral>(L, lua_upvalueindex(2));
         //IPeripheral.PeripheralCallback cb = lua_ToObject<IPeripheral.PeripheralCallback>(L, lua_upvalueindex(3));
-        string method = lua_tostring(L, lua_upvalueindex(3));
+        string? method = lua_tostring(L, lua_upvalueindex(3));
+        if (c == null || p == null || method == null)
+            return luaL_error(L, "internal error");
         if (p.Computer != c)
         {
             return luaL_error(L, "not connected");
@@ -216,10 +219,10 @@ class Computer
     void PauseExecution(lua_State L, lua_Debug ar)
     {
         //Console.WriteLine("STOP EXEC");
-        Console.WriteLine($"Paused in {ar.currentline}");
+        //Console.WriteLine($"Paused in {ar.currentline}");
         lua_yield(L, 0);
         lua_sethook(L, null, 0, 0);
-        DumpStack(L);
+        //DumpStack(L);
     }
 
     public void Start()
@@ -263,7 +266,7 @@ class Computer
         if (dead && state != LUA_OK)
         {
             string err = lua_tostring(L, -1);
-            LocalTTY.Write("FAILED TO RESUME: "+err);
+            LocalTTY?.Write("FAILED TO RESUME: "+err);
         }
         lua_pop(L, remove);
         return dead;
@@ -288,7 +291,7 @@ class Computer
     public void TryResume()
     {
         Thread.BeginCriticalRegion();
-        if (active && !running)
+        if (active && !running && !iowait)
         {
             running = true;
             SpessCore.Instance.Manager.Running[Thread.CurrentThread.ManagedThreadId] = this;
@@ -314,6 +317,22 @@ class Computer
     public void PushSignal(LuaSignal signal)
     {
         events.Put(signal);
+    }
+
+    public void EnterIOWait()
+    {
+        lock (pauselock) {
+            iowait = true;
+            Pause();
+        }
+    }
+
+    public void ExitIOWait()
+    {
+        lock (pauselock)
+        {
+            iowait = false;
+        }
     }
 
     ~Computer()

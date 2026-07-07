@@ -18,6 +18,13 @@ class LuaValueList
     List<object?> values = [];
     public int Count => values.Count;
 
+    LuaValueList() {}
+
+    public LuaValueList(params object[] objs)
+    {
+        values = [..objs];
+    }
+
     struct IVL
     {
         public List<object?> List = [];

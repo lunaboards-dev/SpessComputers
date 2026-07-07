@@ -23,7 +23,7 @@ while i < 1000 do
     coroutine.kresume(c)
 end
 
-tty:write("^ Should be over 1000.\r\n")
+tty:write("\n^ Should be over 1000.\r\n")
 
 --[[ tty:write("> ")
 

@@ -37,7 +37,7 @@ ctl.onmessage = (msg) => {
         console.log(txt);
         const obj = JSON.parse(txt);
         if (obj.command == "new_computer") {
-            term.writeln("Connected to TTY "+obj.id);
+            term.writeln("\x1b[2J\x1b[HConnected to TTY "+obj.id);
             connect_tty(obj.id);
         }
     });

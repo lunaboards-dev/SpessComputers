@@ -17,7 +17,7 @@ class LuaExecutionManager
             if (SpessCore.Instance != null && SpessCore.Instance.Computers.Count > 0) {
                 if (i >= SpessCore.Instance.Computers.Count) i = 0;
                 var comp = SpessCore.Instance.Computers[i];
-                if (comp.Lock.TryEnter()) {
+                if (comp != null && comp.Lock != null && comp.Lock.TryEnter()) {
                     if (comp.Deadline <= Times.CurTime)
                     {
                         comp.TryResume();

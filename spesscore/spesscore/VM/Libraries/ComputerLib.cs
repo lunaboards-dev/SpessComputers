@@ -25,7 +25,8 @@ class ComputerLib : Library
             {"set_mem_baseline", SetMemoryBaseline},
             //{"set_thd", SetThread},
             {"pull_signal", PullSignal},
-            {"thd_resume", ThdResume}
+            {"thd_resume", ThdResume},
+            {"int_yield", OnlyYield}
         };
     }
 
@@ -201,5 +202,10 @@ class ComputerLib : Library
         lua_resume(S, L, args-1, ref nargs);
         lock(c.PLL) c.PL = L;
         return nargs;
+    }
+
+    int OnlyYield(lua_State L)
+    {
+        return lua_yield(L, 0);
     }
 }

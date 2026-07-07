@@ -21,6 +21,10 @@ class EEPROM : AbstractPeripheral
             {"cfg_set", ConfigSet},
             {"cfg_size", ConfigSize}
         };
+        if (Config.AllowCustomEEPROMCode)
+        {
+            callbacks.Add("code_set", SetCode);
+        }
     }
 
     public EEPROM(string path) : this()
@@ -41,6 +45,13 @@ class EEPROM : AbstractPeripheral
     public override void Destroy()
     {
         
+    }
+
+    int SetCode(lua_State L)
+    {
+        byte[] data = luaL_checkbytebuffer(L, 2);
+        code = data;
+        return 0;
     }
 
     int Code(lua_State L)
