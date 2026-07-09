@@ -1,7 +1,5 @@
 #include "byondapi.h"
 
-#include "json.hpp"
-
 #include <string>
 #include <vector>
 #include <stdarg.h>

@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="build-sc-root/build-sc-root.csproj" />
   <Project Path="spesscore/spesscore.csproj" />
 </Solution>

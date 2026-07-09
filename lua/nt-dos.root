@@ -1,0 +1,8 @@
+@root nt-dos
+@output nt-dos-root.db
+~	chown=0:0
+~bin/	chmod=rwxrwxr-x
+~daemon/	chmod=rwxrwxr-x
+~lib/	$ext=lua	chmod=rwxrwxr-x
+-.install
++user	directory

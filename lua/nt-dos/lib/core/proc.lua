@@ -14,13 +14,15 @@ proc_ctx = {
     parent:int,
     id:int,
     start:float,
-    env:table
+    env:table,
+    children:table{__mode=v}
 }
 ]]
 
 function proc.context(uid, gid, euid, egid)
     euid = euid or uid
     egid = egid or gid
+
     
 end
 
@@ -36,10 +38,15 @@ function proc.add(obj)
 
 end
 
-local function reap(pobj, reason)
-    if pobj.parent then
-
+local function reap(pobj, reason, no_notify)
+    if not no_notify and pobj.parent then
+        -- notify parent
     end
+    for k, v in pairs(pobj.children) do
+        reap(v, reason, true)
+    end
+    -- close handles
+    
 end
 
 local deadline = 0
@@ -49,9 +56,13 @@ function proc.run()
         for i=1, #procs do
             local p = procs[i]
             local ok, exit_code, time = pcall(c_kresume, p.coro)
-            if not ok then
-                reap(p)
+            if not ok then -- task failed, the children must die
+                reap(p, "error")
+                goto continue
             end
+            if not exit_code then goto continue end
+            
+            ::continue::
         end
     end
 end
