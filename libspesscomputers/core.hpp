@@ -4,6 +4,19 @@
 #include <unordered_map>
 #include <byondapi.h>
 
+#define NUMBER 0x2A
+
+static CByondValue ByondTrue = {
+    .type = NUMBER,
+    .data = {.num = 1}
+};
+
+static CByondValue ByondFalse = {
+    .type = NUMBER,
+    .data = {.num = 0}
+};
+
+
 struct NetworkUpdate {
 
 };
@@ -29,6 +42,7 @@ struct SpessComputers {
     std::vector<std::string> DestroyedComptuers;
     std::unordered_map<u4c, ComputerState> ComputerMapping;
     int Handle;
+    int PID;
 };
 
 extern SpessComputers Core;
@@ -41,3 +55,5 @@ BYOND_API_DEF(tick)
 BYOND_API_DEF(power)
 BYOND_API_DEF(send_signal)
 BYOND_API_DEF(register_api)
+
+void bwoink(CByondValue &src, const char * msg);

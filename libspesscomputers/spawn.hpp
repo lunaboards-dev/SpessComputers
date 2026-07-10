@@ -2,4 +2,4 @@
 #include <string>
 #include <vector>
 
-int OpenSpesscore(std::string path, std::vector<char *> args);
+int OpenSpesscore(std::string path, std::vector<char *> args, int * spess_pid);
