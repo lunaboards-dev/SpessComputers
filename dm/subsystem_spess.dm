@@ -17,6 +17,9 @@ SUBSYSTEM_DEF(spesscomputers)
     var/list/last_update = list()
     // errors :(
     var/list/bwoinks = list()
+    var/list/proc_is_kill = FALSE
+    var/list/proc_is_crash = FALSE
+    var/list/proc_error
 
 /datum/controller/subsystem/spesscomputers/Initialize()
     // we're working on it
@@ -24,10 +27,14 @@ SUBSYSTEM_DEF(spesscomputers)
     sc_tick = load_ext("spesscomputers", "byond:spess_tick")
     sc_add_php = load_ext("spesscomputers", "byond:spess_register_peripheral")
     call_ext("spesscomputers", "byond:spess_init")(src)
-    
+    PumpErrors()
+
 
 /datum/controller/subsystem/spesscomputers/fire(resumed = FALSE)
     call_ext(sc_tick)(src)
+    PumpErrors()
+
+/datum/controller/subsystem/spesscomputers/proc/PumpErrors()
     if (bwoinks.len > 0)
         for(i=1, i<=bwoinks.len, i++)
             message_admins("uncaught SpessCore error: [bwoinks[i]]")

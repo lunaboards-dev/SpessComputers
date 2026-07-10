@@ -167,3 +167,7 @@ BYOND_API_METHOD(init) {
     bwoink(argv[0], "failed to open socket");
     return ByondFalse;
 }
+
+BYOND_API_METHOD(tick) {
+    
+}
