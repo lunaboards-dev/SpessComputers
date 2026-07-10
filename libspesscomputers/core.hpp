@@ -33,9 +33,11 @@ struct SpessComputers {
 
 extern SpessComputers Core;
 
-#define BYOND_API_METHOD(method) CByondValue sc_##method(int argc, CByondValue * argv)
+#define BYOND_API_METHOD(method) CByondValue spess_##method(int argc, CByondValue * argv)
 #define BYOND_API_DEF(method) extern "C" BYOND_EXPORT BYOND_API_METHOD(method);
 
 BYOND_API_DEF(init)
-BYOND_API_DEF(update)
-BYOND_API_DEF()
+BYOND_API_DEF(tick)
+BYOND_API_DEF(power)
+BYOND_API_DEF(send_signal)
+BYOND_API_DEF(register_api)
