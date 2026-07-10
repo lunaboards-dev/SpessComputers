@@ -627,3 +627,9 @@ vite.config.ts.timestamp-*
 
 # john we need that file
 !/lua/nt-dos/bin/
+
+*.o
+*.so
+*.dll
+*.lib
+*.a
