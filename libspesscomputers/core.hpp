@@ -1,4 +1,5 @@
 #pragma once
+#include "debug.hpp"
 #include <vector>
 #include <string>
 #include <unordered_map>

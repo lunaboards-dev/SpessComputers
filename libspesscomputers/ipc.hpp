@@ -42,8 +42,8 @@ extern IPCSectionHandler PongHandler;
 extern IPCSectionHandler EventHandler;
 
 IPCSectionHandler* Handlers[] = {
-    &PingHandler,
+    /* &PingHandler,
     &PongHandler,
-    &EventHandler,
+    &EventHandler, */
     nullptr
 };

@@ -1,7 +1,7 @@
 source_files := $(wildcard *.cpp)
 object_files := $(patsubst %.cpp,%.o,$(source_files))
 
-CFLAGS := -fPIC -m32 -I./ -lbyond -lext
+CFLAGS := -g -fPIC -m32 -I./ -lbyond -lext
 
 %.o : %.cpp
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@

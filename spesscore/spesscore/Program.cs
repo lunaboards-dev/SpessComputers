@@ -4,6 +4,7 @@ using spesscore;
 
 List<string> flags = [];
 Dictionary<string, string> nargs = [];
+Console.WriteLine(string.Join(" ", args));
 foreach (string arg in args)
 {
     int pos;
