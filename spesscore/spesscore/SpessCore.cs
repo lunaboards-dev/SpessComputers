@@ -145,8 +145,9 @@ class SpessCore
         return comp;
     }
 
-    void Shutdown(object? sender, EventArgs e)
+    async Task AwaitShutdown()
     {
+        await Process.GetProcessById(Config.ParentPID).WaitForExitAsync();
         Console.WriteLine("Parent killed, shutting down!");
         Environment.Exit(0);
     }
@@ -154,10 +155,6 @@ class SpessCore
     public void Start()
     {
         Manager.Start();
-        if (Config.ParentPID > 0)
-        {
-            Process.GetProcessById(Config.ParentPID).Exited += Shutdown;
-        }
         //ByondSrc.ProcessPacket(ipc);
         // await connection
         // actually don't do anything like a boss

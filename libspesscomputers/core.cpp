@@ -22,6 +22,7 @@
 SpessComputers Core;
 
 void bwoink(CByondValue &src, const char * msg) {
+    
     printf("\x1b[31mSPESSCOMPUTERS ERROR: %s\x1b[0m\n", msg);
     CByondValue str;
     ByondValue_SetStr(&str, msg);
@@ -60,12 +61,12 @@ char * auto_b2str(CByondValue& v) {
     return buffer;
 }
 
-void super_free(std::vector<char *> args) {
+/* void super_free(std::vector<char *> args) {
     auto ptr = args.cbegin();
     while (ptr < args.cend()) {
         free(*ptr++);
     }
-}
+} */
 
 std::vector<std::string> CreateArgList(CByondValue &val, std::string &workspace_path, std::string &exec_path, std::string &ipc_path) {
     u4c len = 0;
@@ -167,31 +168,45 @@ BYOND_API_METHOD(init) {
     }
 }
 
+inline CByondValue IntVal(int v) {
+    CByondValue bv = {
+        .type = NUMBER,
+        .data = {
+            .num = v
+        }
+    };
+    return bv;
+}
+
+#define SC_CON_OK 0
+#define SC_CON_RETRY 1
+#define SC_CON_DEAD 2
+
 BYOND_API_METHOD(init_try_connect) {
     try {
         int fd;
-        if (argc < 1) return ByondFalse;
+        if (argc < 1) return IntVal(SC_CON_DEAD);
         if (is_proc_kill(Core.PID, *argv)) {
-            return ByondFalse;
+            return IntVal(SC_CON_DEAD);
         }
         if ((fd = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
             // bwoink
             bwoink(argv[0], "failed to create socket");
-            return ByondFalse;
+            return IntVal(SC_CON_DEAD);
         }
         if (connect(fd, (struct sockaddr *) &Core.SocketAddr, sizeof(Core.SocketAddr)) == -1) {
             // bwoink
             close(fd);
         } else {
             Core.Handle = fd;
-            return ByondTrue;
+            return IntVal(SC_CON_OK);
         }
-        return ByondFalse;
+        return IntVal(SC_CON_RETRY);
     } catch (const std::runtime_error& e) {
         bwoink(argv[0], std::format("c++ exception: {}", e.what()).c_str());
-        return ByondFalse;
+        return IntVal(SC_CON_DEAD);
     } catch (...) {
-        return ByondFalse;
+        return IntVal(SC_CON_DEAD);
     }
 }
 
