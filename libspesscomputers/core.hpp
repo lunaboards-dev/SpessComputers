@@ -4,6 +4,9 @@
 #include <string>
 #include <unordered_map>
 #include <byondapi.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <format>
 
 #define NUMBER 0x2A
 
@@ -42,6 +45,10 @@ struct SpessComputers {
     std::vector<u4c> CreatedComputers;
     std::vector<std::string> DestroyedComptuers;
     std::unordered_map<u4c, ComputerState> ComputerMapping;
+    std::string WsPath;
+    std::string ExePath;
+    std::string IpcPath;
+    sockaddr_un SocketAddr;
     int Handle;
     int PID;
 };
@@ -52,6 +59,7 @@ extern SpessComputers Core;
 #define BYOND_API_DEF(method) extern "C" BYOND_EXPORT BYOND_API_METHOD(method);
 
 BYOND_API_DEF(init)
+BYOND_API_DEF(init_try_connect)
 BYOND_API_DEF(tick)
 BYOND_API_DEF(power)
 BYOND_API_DEF(send_signal)

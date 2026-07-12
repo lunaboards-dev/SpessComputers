@@ -5,9 +5,13 @@
 #include <unistd.h>
 #include <strings.h>
 
-int OpenSpesscore(std::string path, std::vector<char *> args, int * spess_pid) {
+int OpenSpesscore(std::string path, std::vector<std::string> args, int * spess_pid) {
     pid_t pid = 0;
-    int ok = posix_spawn(&pid, path.c_str(), nullptr, nullptr, args.data(), environ);
+    std::vector<const char *> cargs;
+    for (std::string s : args) {
+        cargs.push_back(s.c_str());
+    }
+    int ok = posix_spawn(&pid, path.c_str(), nullptr, nullptr, (char**)cargs.data(), environ);
     *spess_pid = pid;
     return ok;
 }
