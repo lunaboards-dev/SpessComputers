@@ -22,7 +22,6 @@
 SpessComputers Core;
 
 void bwoink(CByondValue &src, const char * msg) {
-    
     printf("\x1b[31mSPESSCOMPUTERS ERROR: %s\x1b[0m\n", msg);
     CByondValue str;
     ByondValue_SetStr(&str, msg);
@@ -103,40 +102,98 @@ std::vector<std::string> CreateArgList(CByondValue &val, std::string &workspace_
     return args;
 }
 
+struct sc_state {
+    bool running;
+    bool crashed;
+    int code;
+};
+
 #ifdef __linux__
 #include <sys/wait.h>
 #include <signal.h>
 #include <stdexcept>
-bool is_proc_kill(int pid, CByondValue &src) {
+sc_state proc_state(int pid) {
+    sc_state st = {
+        .running = false,
+        .crashed = false,
+        .code = -1
+    };
     int stat = 0;
-    if (waitpid(pid, &stat, WNOHANG) == 0) return false;
-    if (WIFSIGNALED(stat)) { // everything is fucked
-        char * buf = nullptr;
-        auto_sprintf(&buf, "spesscore crashed! (%s)", strsignal(WTERMSIG(stat)));
-        bwoink(src, buf);
-        free(buf);
+    if (waitpid(pid, &stat, WNOHANG) == 0) {
+        st.running = true;
+    } else if (WIFSIGNALED(stat)) { // crashed
+        st.running = false;
+        st.crashed = true;
+        st.code = WTERMSIG(stat);
+    } else if (WIFEXITED(stat)) {
+        st.running = false;
+        st.crashed = false;
+        st.code = WEXITSTATUS(stat);
+    }
+    return st;
+}
+
+#elifdef __WIN32__
+sc_state proc_state(int pid) {
+
+}
+#endif
+
+bool is_proc_kill(int pid, CByondValue &src) {
+    auto st = proc_state(pid);
+    if (st.running) return false;
+    if (st.crashed) { // everything is fucked
+        bwoink(src, std::format("spesscore crashed! ({})", strsignal(st.code)));
         return true;
-    } else if (WIFEXITED(stat)) { // what? probably an uncaught C# exception, though this should SIGABRT
-        char * buf = nullptr;
-        auto_sprintf(&buf, "spesscore stopped (exit code: %d)", WEXITSTATUS(stat));
-        bwoink(src, buf);
-        free(buf);
+    } else { // what? probably an uncaught C# exception, though this should SIGABRT
+        bwoink(src, std::format("spesscore stopped! (exit code: {})", st.code));
         return true;
     }
     return false;
 }
-#elifdef __WIN32__
-bool is_proc_kill(int pid, CByondValue &src) {
-    // yeah
+
+SpessComputers::~SpessComputers() {
+    // clean up our mess
 }
-#endif
+
+bool AttemptRecovery(CByondValue &src) {
+    if (proc_state(Core.PID).running) { // spesscore is still valid! why did we restart?
+        WTF_BWOINK(src, "attempt to restart despite core still running!");
+        return false;
+    }
+    auto old = Core;
+    Core = {};
+    // idk, recover or something
+    Core.Valid = true;
+    // pump errors from old state
+    for (auto s : old.StoredBwoinks) {
+        bwoink(src, s);
+    }
+    // Peripherals, networks, and computers are now invalid.
+    // TODO: we should attempt to recover these
+    // recover terminals
+    for (auto term : old.Terminals) {
+        term.second.id = "";
+        term.second.status = TTY_STAT_RECOVER | TTY_STAT_NEED_ID;
+        Core.TTYCreateRequests.push(term.second);
+    }
+    old.Terminals.clear();
+    return true;
+}
 
 BYOND_API_METHOD(init) {
     try {
         if (argc < 2) return ByondFalse;
         auto src = argv[0];
         auto args = argv[1];
-        Core = {}; // clear out our core lol
+        if (Core.Valid) {
+            if (!AttemptRecovery(src)) {
+                Byond_CRASH("i should kick your fucking ass");
+                return ByondFalse;
+            }
+        } else {
+            Core = {}; // clear out our core lol
+        }
         std::string ws_path = "";
         std::string exe_path = "";
         std::string sock_path = "";
@@ -211,5 +268,6 @@ BYOND_API_METHOD(init_try_connect) {
 }
 
 BYOND_API_METHOD(tick) {
-    
+    // drain updates here
+    return ByondTrue;
 }

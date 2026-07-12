@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <format>
+#include <queue>
 
 #define NUMBER 0x2A
 
@@ -20,6 +21,18 @@ static CByondValue ByondFalse = {
     .data = {.num = 0}
 };
 
+#define TTY_STAT_OK 0
+#define TTY_STAT_UNOWNED 1
+#define TTY_STAT_NEED_ID 2
+#define TTY_STAT_KILLED 3
+#define TTY_STAT_RECOVER (1 << 15)
+#define TTY_STAT_MASK 0x7FFF
+
+struct TTY {
+    CByondValue ref;
+    std::string id;
+    unsigned short status;
+};
 
 struct NetworkUpdate {
 
@@ -34,6 +47,7 @@ struct ComputerState {
 
 // this is a big buffer of all the info we need
 struct SpessComputers {
+    bool Valid;
     std::vector<std::string> StoredBwoinks;
     bool ShouldPong;
     double PingTime;
@@ -51,6 +65,9 @@ struct SpessComputers {
     sockaddr_un SocketAddr;
     int Handle;
     int PID;
+    std::queue<TTY> TTYCreateRequests;
+    std::unordered_map<u4c, TTY> Terminals;
+    ~SpessComputers();
 };
 
 extern SpessComputers Core;
@@ -66,3 +83,8 @@ BYOND_API_DEF(send_signal)
 BYOND_API_DEF(register_api)
 
 void bwoink(CByondValue &src, const char * msg);
+inline void bwoink(CByondValue &src, std::string msg) {
+    bwoink(src, msg.c_str());
+}
+
+#define WTF_BWOINK(SSsc, msg) bwoink(SSsc, std::format("WTF!? {}({}:{}) - {}", __func__, __FILE__, __LINE__, msg))

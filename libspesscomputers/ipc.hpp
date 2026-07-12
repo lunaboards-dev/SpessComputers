@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <sstream>
+#include <byondapi.h>
 
 enum IPCSectionID : uint16_t {
     IPC_SPing,
@@ -17,19 +18,17 @@ enum IPCSectionID : uint16_t {
     IPC_SPeripheralCall,
     IPC_SBwoink,
     IPC_SManagedDiskQuery,
-    IPC_SManagedDiskReturn,
     IPC_STapeDataQuery,
-    IPC_STapeDataReturn,
     IPC_SHolocardRead,
     IPC_SHolocardWrite,
-    IPC_SHolocardReturnR,
-    IPC_SHolocardReturnW,
     IPC_SComputerPower,
-    IPC_SGenericPeripheralCall
+    IPC_SGenericPeripheralCall,
+    IPC_SCreateTTY,
+    IPC_SCreateComputer
 };
 
-using IPCSectionReader = bool(*)(void*,size_t,int*);
-using IPCSectionWriter = bool(*)(std::stringstream,int*);
+using IPCSectionReader = bool(*)(CByondValue&,void*,size_t);
+using IPCSectionWriter = bool(*)(CByondValue&,std::stringstream);
 
 struct IPCSectionHandler {
     IPCSectionID sec_id;
@@ -40,8 +39,10 @@ struct IPCSectionHandler {
 extern IPCSectionHandler PingHandler;
 extern IPCSectionHandler PongHandler;
 extern IPCSectionHandler EventHandler;
+extern IPCSectionHandler TTYHandler;
 
-IPCSectionHandler* Handlers[] = {
+static IPCSectionHandler* Handlers[] = {
+    &TTYHandler,
     /* &PingHandler,
     &PongHandler,
     &EventHandler, */
