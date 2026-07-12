@@ -16,6 +16,7 @@ public static class Config
     public static bool NoCreateDefaultTables;
     public static bool DebugEnableControlWS; // YOU SHOULD NEVER EVER EVER USE THIS IN PRODUCTION
     public static bool AllowCustomEEPROMCode;
+    public static int ParentPID;
 
     static void TrySet(Dictionary<string,string> keys, string key, string fallback, out string value)
     {
@@ -77,5 +78,6 @@ public static class Config
         TrySet(keys, "maxsystemmemory", 12288, out MaxSystemMemory);
         TrySet(keys, "memorysizes", [128, 256, 512, 1024, 512, 1024, 2048, 3072], MemorySizes);
         TrySet(keys, "disksizes", [512, 1024, 2048, 4096, 8192], DiskSizes);
+        TrySet(keys, "parentpid", -1, out ParentPID);
     }
 }

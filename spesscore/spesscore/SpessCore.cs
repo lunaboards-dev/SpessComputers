@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -144,9 +145,19 @@ class SpessCore
         return comp;
     }
 
+    void Shutdown(object? sender, EventArgs e)
+    {
+        Console.WriteLine("Parent killed, shutting down!");
+        Environment.Exit(0);
+    }
+
     public void Start()
     {
         Manager.Start();
+        if (Config.ParentPID > 0)
+        {
+            Process.GetProcessById(Config.ParentPID).Exited += Shutdown;
+        }
         //ByondSrc.ProcessPacket(ipc);
         // await connection
         // actually don't do anything like a boss

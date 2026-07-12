@@ -11,9 +11,12 @@
 #include <format>
 
 #ifdef __linux__
+#include <unistd.h>
 #define stricmp strcasecmp
 #elifdef __WIN32__
+#include <windows.h>
 #define stricmp _stricmp
+#define getpid GetCurrentProcessId
 #endif
 
 SpessComputers Core;
@@ -67,8 +70,9 @@ void super_free(std::vector<char *> args) {
 std::vector<std::string> CreateArgList(CByondValue &val, std::string &workspace_path, std::string &exec_path, std::string &ipc_path) {
     u4c len = 0;
     Byond_ReadListAssoc(&val, NULL, &len);
-    CByondValue values[len];
-    Byond_ReadListAssoc(&val, values, &len);
+    std::vector<CByondValue> values(len);
+    //CByondValue values[len];
+    Byond_ReadListAssoc(&val, values.data(), &len);
     std::vector<std::string> args;
     for (int i = 0; i < len; i+=2) {
         char *kval = auto_b2str(values[i]);
@@ -84,16 +88,14 @@ std::vector<std::string> CreateArgList(CByondValue &val, std::string &workspace_
         } else if (stricmp(kval, "ipcsocketpath") == 0) {
             ipc_path = vval;
         }
-        std::string skval = kval;
-        std::string svval = vval;
         //auto_sprintf(&buf, "%s=%s", kval, vval);
-        std::string buf = std::format("{}={}", skval, svval); // vsc says this doesn't exist btw
+        std::string buf = std::format("{}={}", kval, vval); // vsc says this doesn't exist btw
         free(kval);
         free(vval);
         args.push_back(buf);
     }
-    args.insert(args.begin(), (char*)exec_path.c_str());
-    args.push_back(nullptr);
+    args.push_back(std::format("parentpid={}", getpid()));
+    args.insert(args.begin(), exec_path);
     if (ipc_path[0] == '.' && ipc_path[1] == '/') {
         ipc_path = workspace_path + "/" + ipc_path;
     }
