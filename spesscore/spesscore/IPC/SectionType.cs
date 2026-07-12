@@ -20,5 +20,6 @@ namespace spesscore.IPC;
         HolocardWrite,
         ComputerPower,
         GenericPeripheralCall, // this will be jank as shit, might be useful though
-        CreateTTY
+        CreateTTY,
+        SetID
     }

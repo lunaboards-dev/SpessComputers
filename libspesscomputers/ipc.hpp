@@ -24,6 +24,7 @@ enum IPCSectionID : uint16_t {
     IPC_SComputerPower,
     IPC_SGenericPeripheralCall,
     IPC_SCreateTTY,
+    IPC_SSetID,
     IPC_SCreateComputer
 };
 
@@ -40,9 +41,11 @@ extern IPCSectionHandler PingHandler;
 extern IPCSectionHandler PongHandler;
 extern IPCSectionHandler EventHandler;
 extern IPCSectionHandler TTYHandler;
+extern IPCSectionHandler SetIDHandler;
 
 static IPCSectionHandler* Handlers[] = {
     &TTYHandler,
+    &SetIDHandler,
     /* &PingHandler,
     &PongHandler,
     &EventHandler, */
@@ -52,3 +55,11 @@ static IPCSectionHandler* Handlers[] = {
 bool IPC_Next();
 void IPC_Flush();
 bool IPC_Send(IPCSectionID id, void * buffer, size_t size);
+
+static bool NullWrite(CByondValue& ss, std::stringstream stream) {
+    return false;
+}
+
+static bool NullRead(CByondValue&,void*,size_t) {
+    return false;
+}

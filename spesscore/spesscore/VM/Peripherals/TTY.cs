@@ -12,9 +12,15 @@ class TTY : AbstractPeripheral
     override public Dictionary<string, IPeripheral.PeripheralCallback> Callbacks => callbacks;
     CircularBuffer<byte> buffer = new(1024, true); // if you don't process 1KiB of inputs in time, that's on you.
     TerminalListener? listener;
+    uint href;
+
+    public override uint GetRef()
+    {
+        return href;
+    }
 
     Dictionary<string, IPeripheral.PeripheralCallback> callbacks;
-    public TTY() : base("tty")
+    public TTY(uint holder) : base("tty")
     {
         callbacks = new()
         {
@@ -23,12 +29,14 @@ class TTY : AbstractPeripheral
             {"read", Read},
             {"next", NextInput}
         };
+        href = holder;
     }
 
     public override void SetID(string id)
     {
         listener = SpessCore.Instance?.TServ.NewListener(id); // i will be impressed if this is ever null
         listener.OnInput += FillBuffer;
+        // Fire Set ID event
     }
 
     public void FillBuffer(byte[] bytes)

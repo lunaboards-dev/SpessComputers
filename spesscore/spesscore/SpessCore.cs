@@ -23,6 +23,9 @@ class SpessCore
     public static SpessCore? Instance;
     public LuaExecutionManager Manager;
     Socket ipc;
+    IPC.IPC coms;
+
+    public IPC.IPC IPC => coms;
 
     long hookspeed = 0;
 
@@ -137,7 +140,7 @@ class SpessCore
         AddPeripheral(eeprom);
         comp.AddPeripheral(eeprom);
         comp.eeprom = eeprom;
-        TTY tty = new();
+        TTY tty = new(0);
         AddPeripheral(tty);
         comp.AddPeripheral(tty);
         comp.SetLocalTTY(tty.ID);
@@ -155,11 +158,16 @@ class SpessCore
     public void Start()
     {
         Manager.Start();
-        //ByondSrc.ProcessPacket(ipc);
-        // await connection
-        // actually don't do anything like a boss
-        while (true) {}
-        // close if we lose connection
+        while (true) {
+            Socket sock = ipc.Accept();
+            coms = new(sock);
+            while (true) {
+                if (coms.Next())
+                {
+                    coms.Flush();
+                }
+            }
+        }
     }
 
     public void PushSignal(LuaSignal signal)

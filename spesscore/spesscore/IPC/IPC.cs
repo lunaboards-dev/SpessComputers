@@ -6,9 +6,9 @@ using spesscore.IPC.Sections;
 
 namespace spesscore.IPC;
 
-class IPC
+class IPC(Socket s)
 {
-    Socket sock;
+    Socket sock = s;
     Dictionary<SectionType, IIPCSection> Sections = [];
     Dictionary<SectionType, int> Counters = [];
 
@@ -72,5 +72,18 @@ class IPC
                 } else break;
             }
         }
+    }
+
+    unsafe public void Send(SectionType sec, byte * ptr, int size)
+    {
+        var data = new ReadOnlySpan<byte>(ptr, size);
+        SectionHeader header = new()
+        {
+            SectionSize = (uint)size,
+            SectionType = (short)sec
+        };
+        var hdr = new ReadOnlySpan<byte>((byte*)&header, sizeof(SectionHeader));
+        sock.Send(hdr);
+        sock.Send(data);
     }
 }

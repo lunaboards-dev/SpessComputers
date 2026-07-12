@@ -10,6 +10,7 @@
 #include <queue>
 
 #define NUMBER 0x2A
+#define DATUM 0x21
 
 static CByondValue ByondTrue = {
     .type = NUMBER,

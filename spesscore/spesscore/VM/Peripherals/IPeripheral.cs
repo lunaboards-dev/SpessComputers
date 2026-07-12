@@ -6,6 +6,7 @@ interface IPeripheral
     Dictionary<string, PeripheralCallback> Callbacks { get; }
     string PeripheralName { get; }
     string ID { get; set; }
+    uint Reference { get; }
     Computer? Computer { get; }
     void Attach(Computer computer);
     void Detach(Computer computer);
