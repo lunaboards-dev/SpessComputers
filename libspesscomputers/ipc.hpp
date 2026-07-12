@@ -48,3 +48,7 @@ static IPCSectionHandler* Handlers[] = {
     &EventHandler, */
     nullptr
 };
+
+bool IPC_Next();
+void IPC_Flush();
+bool IPC_Send(IPCSectionID id, void * buffer, size_t size);

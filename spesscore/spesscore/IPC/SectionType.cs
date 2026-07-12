@@ -15,13 +15,10 @@ namespace spesscore.IPC;
         PeripheralCall,
         Bwoink,
         ManagedDiskQuery,
-        ManagedDiskReturn,
         TapeDataQuery,
-        TapeDataReturn,
         HolocardRead,
         HolocardWrite,
-        HolocardReturnR,
-        HolocardReturnW,
         ComputerPower,
-        GenericPeripheralCall // this will be jank as shit, might be useful though
+        GenericPeripheralCall, // this will be jank as shit, might be useful though
+        CreateTTY
     }

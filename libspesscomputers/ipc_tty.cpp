@@ -27,6 +27,9 @@ bool TTYRequestRead(CByondValue& ss, void * blk, size_t sec_size) {
         } else {
             term.status = TTY_STAT_UNOWNED;
         }
+        CByondValue idval;
+        ByondValue_SetStr(&idval, res->id);
+        Byond_WriteVar(&term.ref, "id", &idval);
     } else {
         term.status = TTY_STAT_KILLED;
     }
