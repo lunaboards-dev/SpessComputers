@@ -12,4 +12,3 @@ bool PingPongWrite(std::stringstream stream, int * ctr) {
     stream.write((const char*)&ns, sizeof(double));
     return true;
 }
-

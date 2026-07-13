@@ -1,4 +1,5 @@
 #pragma once
+#include "core.hpp"
 #include <cstdint>
 #include <cstddef>
 #include <sstream>
@@ -52,8 +53,8 @@ static IPCSectionHandler* Handlers[] = {
     nullptr
 };
 
-bool IPC_Next();
-void IPC_Flush();
+bool IPC_Next(CByondValue * ss);
+void IPC_Flush(CByondValue * ss);
 bool IPC_Send(IPCSectionID id, void * buffer, size_t size);
 
 static bool NullWrite(CByondValue& ss, std::stringstream stream) {
@@ -63,3 +64,5 @@ static bool NullWrite(CByondValue& ss, std::stringstream stream) {
 static bool NullRead(CByondValue&,void*,size_t) {
     return false;
 }
+
+BYOND_API_DEF(ipc_pump);

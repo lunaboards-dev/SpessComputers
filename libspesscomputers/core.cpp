@@ -1,5 +1,6 @@
 #include "core.hpp"
 #include "spawn.hpp"
+#include "ipc.hpp"
 
 #include <string>
 #include <vector>
@@ -268,6 +269,6 @@ BYOND_API_METHOD(init_try_connect) {
 }
 
 BYOND_API_METHOD(tick) {
-    // drain updates here
+    // housekeeping
     return ByondTrue;
 }
