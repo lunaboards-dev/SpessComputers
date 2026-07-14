@@ -9,10 +9,14 @@ class CreateTTY : IIPCSection
 
     public unsafe bool Read(byte* ptr, int Size, ref int Counter)
     {
-        if (Size < sizeof(uint)) return false;
+        if (Size < sizeof(uint)) {
+            SpessCore.Instance.Bwoink("Bad CreateTTY packet: size is less than sizeof(uint)");
+            return false;
+        }
         uint * oref = (uint *)ptr;
         TTY tty = new(*oref);
         SpessCore.Instance.AddPeripheral(tty);
+        Console.WriteLine($"Created TTY for ref {*oref}");
         return true;
     }
 

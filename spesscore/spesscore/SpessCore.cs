@@ -57,7 +57,7 @@ class SpessCore
         TaskScheduler.UnobservedTaskException += (sender, args) => {
             string err = args.Exception.ToString();
             Console.Error.WriteLine("KILL: "+err);
-            Bwoinks.Add(err);
+            Bwoink(err);
         };
         Manager = new();
         // temp lua state
@@ -174,5 +174,13 @@ class SpessCore
     {
         if (Peripherals.TryGetValue(signal.Sender, out IPeripheral val))
             Peripherals[signal.Sender].Computer?.PushSignal(signal);
+    }
+
+    public void Bwoink(string msg)
+    {
+        lock(Bwoinks) {
+            Console.Error.WriteLine("BWOINK!: "+msg);
+            Bwoinks.Add(msg);
+        }
     }
 }

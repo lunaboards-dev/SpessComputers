@@ -270,6 +270,7 @@ BYOND_API_METHOD(init_try_connect) {
 
 BYOND_API_METHOD(tick) {
     if (argc < 1) return ByondFalse;
+    if (!Core.Valid) return ByondFalse;
     try {
         // housekeeping
         IPC_Flush(argv);

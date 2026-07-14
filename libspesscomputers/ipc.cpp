@@ -70,3 +70,11 @@ BYOND_API_METHOD(ipc_pump) {
     if (argc < 1) return ByondFalse;
     return IPC_Next(argv) ? ByondTrue : ByondFalse;
 }
+
+bool NullWrite(CByondValue& ss, std::stringstream& stream,int*ctr) {
+    return false;
+}
+
+bool NullRead(CByondValue&,void*,size_t) {
+    return false;
+}

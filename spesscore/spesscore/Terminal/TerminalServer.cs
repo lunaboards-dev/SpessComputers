@@ -16,7 +16,7 @@ class TerminalServer
 
     public TerminalServer(ushort port)
     {
-        Server = new("0.0.0.0", port, false);
+        Server = new("192.168.1.99", port, false);
         Server.ClientConnected += WsConnected;
         Server.MessageReceived += WsMessage;
         Server.ClientDisconnected += WsDisconnect;
@@ -70,6 +70,7 @@ class TerminalServer
                     GuidLookup.Add(cid, Listener);
                     Pending.Remove(cid);
                     Console.WriteLine($"{cid} connected to tty {uuid}.");
+                    Listener.Write(Encoding.ASCII.GetBytes("(DEBUG) Connected!"));
                     return; // LIVE
                 }
             }

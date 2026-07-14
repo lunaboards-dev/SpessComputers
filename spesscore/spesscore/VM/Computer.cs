@@ -212,8 +212,8 @@ class Computer
         string str = lua_tostring(L, 1);
         luaL_traceback(L, L, str, 1);
         string traceback = luaL_checkstring(L, -1);
-        SpessCore.Instance?.Bwoinks.Add(traceback);
-        Console.WriteLine("Uncaught error: "+traceback);
+        SpessCore.Instance?.Bwoink(traceback);
+        //Console.WriteLine("Uncaught error: "+traceback);
         return 0;
     }
     void PauseExecution(lua_State L, lua_Debug ar)

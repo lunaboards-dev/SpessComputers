@@ -26,7 +26,7 @@ class IPC(Socket s)
         if (amt != hdr_buf.Length)
         {
             // cry about it
-            SpessCore.Instance.Bwoinks.Add("got incomplete header");
+            SpessCore.Instance.Bwoink("got incomplete header");
             return false;
         }
         fixed (byte * hptr = hdr_buf)
@@ -43,7 +43,7 @@ class IPC(Socket s)
                 return (SectionType)hdr->SectionType == SectionType.GameState;
             } else
             {
-                SpessCore.Instance.Bwoinks.Add("unknown section type");
+                SpessCore.Instance.Bwoink("unknown section type: "+hdr->SectionType);
             }
         }
         return false;

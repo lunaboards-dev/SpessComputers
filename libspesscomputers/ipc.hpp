@@ -6,7 +6,13 @@
 #include <byondapi.h>
 
 enum IPCSectionID : uint16_t {
-    IPC_SPing,
+    IPC_SCreateTTY,
+    IPC_SSetID,
+    IPC_SGameState,
+    IPC_SBwoink,
+    IPC_SEvent,
+    IPC_SPing
+    /* IPC_SPing,
     IPC_SPong,
     IPC_SEvent,
     IPC_SGameState,
@@ -26,7 +32,7 @@ enum IPCSectionID : uint16_t {
     IPC_SGenericPeripheralCall,
     IPC_SCreateTTY,
     IPC_SSetID,
-    IPC_SCreateComputer
+    IPC_SCreateComputer */
 };
 
 using IPCSectionReader = bool(*)(CByondValue&,void*,size_t);
@@ -57,12 +63,8 @@ bool IPC_Next(CByondValue * ss);
 void IPC_Flush(CByondValue * ss);
 bool IPC_Send(CByondValue * ss, IPCSectionID id, void * buffer, size_t size);
 
-static bool NullWrite(CByondValue& ss, std::stringstream& stream,int*ctr) {
-    return false;
-}
+bool NullWrite(CByondValue& ss, std::stringstream& stream,int*ctr);
 
-static bool NullRead(CByondValue&,void*,size_t) {
-    return false;
-}
+bool NullRead(CByondValue&,void*,size_t);
 
 BYOND_API_DEF(ipc_pump);

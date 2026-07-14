@@ -11,6 +11,8 @@ class DMPeripheral : IPeripheral
 
     public Computer? Computer => throw new NotImplementedException();
 
+    public uint Reference => throw new NotImplementedException();
+
     public void Attach(Computer computer)
     {
         throw new NotImplementedException();
