@@ -16,7 +16,7 @@ class TerminalServer
 
     public TerminalServer(ushort port)
     {
-        Server = new("127.0.0.1", port, false);
+        Server = new("0.0.0.0", port, false);
         Server.ClientConnected += WsConnected;
         Server.MessageReceived += WsMessage;
         Server.ClientDisconnected += WsDisconnect;
