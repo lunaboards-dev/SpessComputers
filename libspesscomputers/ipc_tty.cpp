@@ -36,7 +36,7 @@ bool TTYRequestRead(CByondValue& ss, void * blk, size_t sec_size) {
     return true;
 }
 
-bool TTYRequestWrite(CByondValue& ss, std::stringstream stream) {
+bool TTYRequestWrite(CByondValue& ss, std::stringstream& stream, int * ctr) {
     if (Core.TTYCreateRequests.empty()) return false;
     TTY t = Core.TTYCreateRequests.front();
     Core.TTYCreateRequests.pop();

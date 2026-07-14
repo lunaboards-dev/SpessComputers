@@ -30,7 +30,7 @@ enum IPCSectionID : uint16_t {
 };
 
 using IPCSectionReader = bool(*)(CByondValue&,void*,size_t);
-using IPCSectionWriter = bool(*)(CByondValue&,std::stringstream);
+using IPCSectionWriter = bool(*)(CByondValue&,std::stringstream&,int*);
 
 struct IPCSectionHandler {
     IPCSectionID sec_id;
@@ -55,9 +55,9 @@ static IPCSectionHandler* Handlers[] = {
 
 bool IPC_Next(CByondValue * ss);
 void IPC_Flush(CByondValue * ss);
-bool IPC_Send(IPCSectionID id, void * buffer, size_t size);
+bool IPC_Send(CByondValue * ss, IPCSectionID id, void * buffer, size_t size);
 
-static bool NullWrite(CByondValue& ss, std::stringstream stream) {
+static bool NullWrite(CByondValue& ss, std::stringstream& stream,int*ctr) {
     return false;
 }
 

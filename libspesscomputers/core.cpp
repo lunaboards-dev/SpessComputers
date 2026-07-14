@@ -269,6 +269,15 @@ BYOND_API_METHOD(init_try_connect) {
 }
 
 BYOND_API_METHOD(tick) {
-    // housekeeping
+    if (argc < 1) return ByondFalse;
+    try {
+        // housekeeping
+        IPC_Flush(argv);
+    } catch (const std::runtime_error& e) {
+        bwoink(argv[0], std::format("c++ exception: {}", e.what()).c_str());
+        return ByondFalse;
+    } catch (...) {
+        return ByondFalse;
+    }
     return ByondTrue;
 }
