@@ -1,3 +1,4 @@
+#pragma warning disable CA2022 // SHUT THE FUCK UP ABOUT INEXACT READS
 using static spesscore.VM.Lua;
 using static spesscore.VM.Helpers;
 
@@ -83,7 +84,8 @@ class EEPROM : AbstractPeripheral
 
     int ConfigSet(lua_State L)
     {
-        string key = luaL_checkstring(L, 2);
+        string? key = luaL_checkstring(L, 2);
+        if (key == null) return 0;
         byte[] value = luaL_checkbytebuffer(L, 3);
         lua_pushboolean(L, cfg_set(key, value) ? 1 : 0);
         return 1;
@@ -91,7 +93,8 @@ class EEPROM : AbstractPeripheral
 
     int ConfigGet(lua_State L)
     {
-        string key = luaL_checkstring(L, 2);
+        string? key = luaL_checkstring(L, 2);
+        if (key == null) return 0;
         if (config.TryGetValue(key, out byte[]? val))
         {
             lua_pushbytebuffer(L, val);

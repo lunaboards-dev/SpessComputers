@@ -41,7 +41,7 @@ class IPC
             Console.WriteLine($"(DEBUG) IPC: Section type: {hdr->SectionType}, Size: {hdr->SectionSize}");
             byte[] body = new byte[hdr->SectionSize];
             amt = sock.Receive(body);
-            if (Sections.TryGetValue((SectionType)hdr->SectionType, out IIPCSection sec)) {
+            if (Sections.TryGetValue((SectionType)hdr->SectionType, out IIPCSection? sec)) {
                 fixed (byte * ptr = body)
                 {
                     int ctr = 0;

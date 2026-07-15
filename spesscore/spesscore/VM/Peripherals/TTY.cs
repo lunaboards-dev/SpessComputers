@@ -34,7 +34,7 @@ class TTY : AbstractPeripheral
 
     public override void SetID(string id)
     {
-        listener = SpessCore.Instance?.TServ.NewListener(id); // i will be impressed if this is ever null
+        listener = SpessCore.Instance.TServ.NewListener(id);
         listener.OnInput += FillBuffer;
         // Fire Set ID event
     }

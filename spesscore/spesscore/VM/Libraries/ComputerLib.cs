@@ -37,6 +37,7 @@ class ComputerLib : Library
     {
         //Computer? c = lua_ToObject<Computer>(L, 1);
         string? id = luaL_checkstring(L, 1);
+        if (id == null) return 0;
         var perf = c.GetPeripheral(id);
         if (perf == null)
             return 0;
@@ -55,6 +56,7 @@ class ComputerLib : Library
             return 0;
         }
         var p = pl?[(int)index++];
+        if (p == null) return 0;
         lua_pushinteger(L, index);
         lua_replace(L, lua_upvalueindex(2));//L.Replace(Lua.UpValueIndex(2));
         lua_pushstring(L, p.ID);//L.PushString(p.ID);
@@ -74,7 +76,8 @@ class ComputerLib : Library
             return 1;
         } else
         {
-            string type = luaL_checkstring(L, 1); //L.CheckString(2);
+            string? type = luaL_checkstring(L, 1); //L.CheckString(2);
+            if (type == null) return 0;
             List<IPeripheral> pl = c.Peripherals.Where((p) => p.PeripheralName.StartsWith(type)).ToList();
             lua_PushObjectManaged(L, pl);//L.PushObject(pl);
             lua_pushinteger(L, 0);//L.PushInteger(0);

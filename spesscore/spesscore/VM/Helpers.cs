@@ -54,7 +54,7 @@ static class Helpers
         if (hand == nint.Zero) return default;
         var gch = GCHandle.FromIntPtr(hand);
         if (!gch.IsAllocated) return default;
-        return (T)gch.Target;
+        return (T?)gch.Target;
     }
 
     // byte array methods because SOMEONE didn't think of it

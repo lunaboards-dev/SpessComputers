@@ -647,9 +647,11 @@ public static class Lua
 		return (lua_type(L, n) <= 0);
 	}
 	
-	public static string? lua_pushliteral(lua_State L, string s)
+	public static string lua_pushliteral(lua_State L, string s)
 	{
+#pragma warning disable CS8603 // Possible null reference return.
 		return lua_pushstring(L, s);
+#pragma warning restore CS8603 // Possible null reference return.
 	}
 	
 	public static void lua_pushglobaltable(lua_State L)
@@ -657,10 +659,12 @@ public static class Lua
 		lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
 	}
 	
-	public static string? lua_tostring(lua_State L, int i)
+	public static string lua_tostring(lua_State L, int i)
 	{
 		size_t temp = 0; // NOP
+#pragma warning disable CS8603 // Possible null reference return.
 		return lua_tolstring(L, i, ref temp);
+#pragma warning restore CS8603 // Possible null reference return.
 	}
 	
 	public static void lua_insert(lua_State L, int idx)

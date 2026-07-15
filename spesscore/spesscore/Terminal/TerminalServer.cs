@@ -126,7 +126,7 @@ class TerminalServer
                             Console.WriteLine($"{cid} sent power from non-local terminal!");
                             return;
                         }
-                        term.Computer?.TryResume();
+                        term?.Computer?.TryResume();
                     }
                     return;
                 }

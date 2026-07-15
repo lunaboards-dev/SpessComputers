@@ -1,8 +1,8 @@
 namespace spesscore;
 
-class Network
+class Network(int i)
 {
-    int id;
+    int id = i;
     public int ID => id;
     public Dictionary<string, NetworkCard> Cards = [];
     public List<NetworkCard> Snoopers = [];
@@ -17,7 +17,7 @@ class Network
 
     public void Send(string dst, string src, short port, byte[] data)
     {
-        if (Cards.TryGetValue(dst, out NetworkCard card))
+        if (Cards.TryGetValue(dst, out NetworkCard? card))
         {
             
         }

@@ -1,3 +1,5 @@
+#pragma warning disable CS8601 // Possible null reference assignment.
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 public static class Config
 {
     public static string WorkspacePath;
@@ -25,13 +27,13 @@ public static class Config
 
     static void TrySet(Dictionary<string,string> keys, string key, int fallback, out int value)
     {
-        if (keys.TryGetValue(key, out string tvh)) value = int.Parse(tvh);
+        if (keys.TryGetValue(key, out string? tvh)) value = int.Parse(tvh);
         else value = fallback;
     }
 
     static void TrySet(Dictionary<string,string> keys, string key, List<string> fallback, List<string> value)
     {
-        if (keys.TryGetValue(key, out string tvh))
+        if (keys.TryGetValue(key, out string? tvh))
         {
             string[] parts = tvh.Split(",");
             value.AddRange(parts);
@@ -43,7 +45,7 @@ public static class Config
 
     static void TrySet(Dictionary<string,string> keys, string key, List<int> fallback, List<int> value)
     {
-        if (keys.TryGetValue(key, out string tvh))
+        if (keys.TryGetValue(key, out string? tvh))
         {
             string[] parts = tvh.Split(",");
             foreach (string part in parts)
@@ -81,3 +83,5 @@ public static class Config
         TrySet(keys, "parentpid", -1, out ParentPID);
     }
 }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+#pragma warning restore CS8601 // Possible null reference assignment.

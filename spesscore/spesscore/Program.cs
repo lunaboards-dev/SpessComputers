@@ -23,6 +23,6 @@ Config.ParseConfig(flags, nargs);
 
 Directory.SetCurrentDirectory(Config.WorkspacePath);
 SpessCore sc = new();
-SpessCore.Instance = sc;
+SpessCore.inst = sc;
 
 sc.Start();

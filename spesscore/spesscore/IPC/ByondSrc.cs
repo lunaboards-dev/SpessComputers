@@ -82,7 +82,7 @@ static class ByondSrc
         public uint Network;
     }
 
-    unsafe static bool ReadStruct<T>(Socket sock, out T dat) where T : struct
+    unsafe static bool ReadStruct<T>(Socket sock, out T dat) where T : unmanaged
     {
         byte[] buf = new byte[sizeof(T)];
         if (sock.Receive(buf) != buf.Length) {

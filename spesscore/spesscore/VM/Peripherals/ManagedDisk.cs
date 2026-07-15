@@ -10,7 +10,7 @@ class ManagedDisk : AbstractPeripheral
     SQLiteConnection? db;
     int capacity = 0;
     bool can_pragma = false;
-    bool paused = false;
+    //bool paused = false;
     public bool IsValid => Computer != null;
 
     public override Dictionary<string, IPeripheral.PeripheralCallback> Callbacks => throw new NotImplementedException();
@@ -223,7 +223,8 @@ class ManagedDisk : AbstractPeripheral
 
     int Select(lua_State L)
     {
-        string table = luaL_checkstring(L, 2);
+        string? table = luaL_checkstring(L, 2);
+        if (table == null) return 0;
         var query = GenStatement(L, 3, $"SELECT * FROM '@DBTBL");
         query.Parameters.Add(new SQLiteParameter("@DBTBL", System.Data.DbType.String)
         {

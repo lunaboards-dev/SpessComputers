@@ -211,7 +211,7 @@ class Computer
     {
         string str = lua_tostring(L, 1);
         luaL_traceback(L, L, str, 1);
-        string traceback = luaL_checkstring(L, -1);
+        string traceback = lua_tostring(L, -1);
         SpessCore.Instance?.Bwoink(traceback);
         //Console.WriteLine("Uncaught error: "+traceback);
         return 0;
@@ -233,7 +233,7 @@ class Computer
             lua_PushTemporaryObject(L, this);
             lua_pushcclosure(L, BwoinkDel, 1);
             //luaL_loadstring(L, Encoding.UTF8.GetString(SpessCore.Instance?.MachineLua));
-            luaL_loadbufferx(L, SpessCore.Instance?.MachineLua, (uint)SpessCore.Instance?.MachineLua.Length, "=machine.lua", "t");
+            luaL_loadbufferx(L, SpessCore.Instance.MachineLua, (uint)SpessCore.Instance.MachineLua.Length, "=machine.lua", "t");
             if (lua_type(L, -1) != LUA_TFUNCTION)
             {
                 throw new Exception("Failed to load machine.lua: "+lua_tostring(L, -1));
@@ -296,14 +296,15 @@ class Computer
             running = true;
             SpessCore.Instance.Manager.Running[Thread.CurrentThread.ManagedThreadId] = this;
             Thread.EndCriticalRegion();
-            try {
+            try
+            {
 
                 if (Resume())
                 {
                     active = false; // he ded
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // handle lol
             }

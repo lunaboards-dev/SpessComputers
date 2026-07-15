@@ -1,3 +1,4 @@
+#pragma warning disable CA2022 // SHUT THE FUCK UP ABOUT INEXACT READS
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -20,14 +21,17 @@ class SpessCore
     public TerminalServer TServ;
     public byte[] MachineLua;
     public byte[] RareFox;
-    public static SpessCore? Instance;
+    public static SpessCore? inst;
+#pragma warning disable CS8603 // Possible null reference return.
+    public static SpessCore Instance => inst;
+    public IPC.IPC IPC => coms;
+#pragma warning restore CS8603 // Possible null reference return.
     public LuaExecutionManager Manager;
     Socket ipc;
-    IPC.IPC coms;
+    IPC.IPC? coms;
 
-    public IPC.IPC IPC => coms;
 
-    long hookspeed = 0;
+    //long hookspeed = 0;
 
     byte[] TryRead(string path)
     {
@@ -172,8 +176,8 @@ class SpessCore
 
     public void PushSignal(LuaSignal signal)
     {
-        if (Peripherals.TryGetValue(signal.Sender, out IPeripheral val))
-            Peripherals[signal.Sender].Computer?.PushSignal(signal);
+        if (Peripherals.TryGetValue(signal.Sender, out IPeripheral? val))
+            val.Computer?.PushSignal(signal);
     }
 
     public void Bwoink(string msg)
