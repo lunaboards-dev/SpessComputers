@@ -5,6 +5,7 @@ BYOND_API_METHOD(create_tty) {
     if (argc < 2) {
         return ByondFalse;
     }
+    printf("Create TTY: T: %u, R: %u\n", argv[1].type, argv[1].data.ref);
     TTY term = {
         .ref = argv[1],
         .id = "",

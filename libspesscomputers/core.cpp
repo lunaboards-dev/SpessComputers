@@ -257,6 +257,7 @@ BYOND_API_METHOD(init_try_connect) {
             close(fd);
         } else {
             Core.Handle = fd;
+            Core.Valid = true;
             return IntVal(SC_CON_OK);
         }
         return IntVal(SC_CON_RETRY);

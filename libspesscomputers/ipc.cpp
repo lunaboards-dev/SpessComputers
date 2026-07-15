@@ -44,11 +44,13 @@ ipc_header rcv_buffer;
 
 bool IPC_Next(CByondValue * ss) {
     auto count = recv(Core.Handle, &rcv_buffer, sizeof(ipc_header), MSG_DONTWAIT | MSG_PEEK); // this is retarded
-    if (count < sizeof(ipc_header)) {
+    // C++ i swear to god
+    if (count < ((ssize_t)sizeof(ipc_header))) {
         return false;
     }
     // actually consume the buffer
     recv(Core.Handle, &rcv_buffer, sizeof(ipc_header), 0);
+    printf("(C++ DEBUG) IPC: Type %u, Size %u\n", rcv_buffer.sectype, rcv_buffer.len);
     // we can block here now
     void * ptr = sc_alloc(rcv_buffer.len);
     recv(Core.Handle, ptr, rcv_buffer.len, 0);
@@ -68,7 +70,14 @@ bool IPC_Next(CByondValue * ss) {
 
 BYOND_API_METHOD(ipc_pump) {
     if (argc < 1) return ByondFalse;
-    return IPC_Next(argv) ? ByondTrue : ByondFalse;
+    try {
+        return IPC_Next(argv) ? ByondTrue : ByondFalse;
+    } catch (const std::runtime_error& e) {
+        bwoink(argv[0], std::format("c++ exception: {}", e.what()).c_str());
+        return ByondFalse;
+    } catch (...) {
+        return ByondFalse;
+    }
 }
 
 bool NullWrite(CByondValue& ss, std::stringstream& stream,int*ctr) {
@@ -78,3 +87,12 @@ bool NullWrite(CByondValue& ss, std::stringstream& stream,int*ctr) {
 bool NullRead(CByondValue&,void*,size_t) {
     return false;
 }
+
+IPCSectionHandler* Handlers[] = {
+    &TTYHandler,
+    &SetIDHandler,
+    /* &PingHandler,
+    &PongHandler,
+    &EventHandler, */
+    nullptr
+};

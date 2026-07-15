@@ -50,14 +50,7 @@ extern IPCSectionHandler EventHandler;
 extern IPCSectionHandler TTYHandler;
 extern IPCSectionHandler SetIDHandler;
 
-static IPCSectionHandler* Handlers[] = {
-    &TTYHandler,
-    &SetIDHandler,
-    /* &PingHandler,
-    &PongHandler,
-    &EventHandler, */
-    nullptr
-};
+extern IPCSectionHandler* Handlers[];
 
 bool IPC_Next(CByondValue * ss);
 void IPC_Flush(CByondValue * ss);

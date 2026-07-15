@@ -40,7 +40,7 @@ bool TTYRequestWrite(CByondValue& ss, std::stringstream& stream, int * ctr) {
     if (Core.TTYCreateRequests.empty()) return false;
     TTY t = Core.TTYCreateRequests.front();
     Core.TTYCreateRequests.pop();
-    stream.write((char*)&t.ref, sizeof(u4c));
+    stream.write((char*)&t.ref.data.ref, sizeof(u4c));
     Core.Terminals[t.ref.data.ref] = t;
     return true;
 }

@@ -29,8 +29,7 @@ abstract class AbstractPeripheral(string name) : IPeripheral
     }
     unsafe static void SendIDUpdate(uint refid, string id)
     {
-        byte[] enc = Encoding.ASCII.GetBytes(id);
-        var dat = new IDUpdate();
+        var dat = new IDUpdate(refid, id);
         SpessCore.Instance.IPC.Send(IPC.SectionType.SetID, (byte*)&dat, sizeof(IDUpdate));
     }
 

@@ -6,9 +6,9 @@ using spesscore.IPC.Sections;
 
 namespace spesscore.IPC;
 
-class IPC(Socket s)
+class IPC
 {
-    Socket sock = s;
+    Socket sock;
     Dictionary<SectionType, IIPCSection> Sections = [];
     Dictionary<SectionType, int> Counters = [];
 
@@ -17,6 +17,12 @@ class IPC(Socket s)
     {
         public short SectionType;
         public uint SectionSize;
+    }
+
+    public IPC(Socket s)
+    {
+        sock = s;
+        AddSection(new CreateTTY()); // fuck it, this is all we need
     }
 
     unsafe public bool Next()
@@ -32,6 +38,7 @@ class IPC(Socket s)
         fixed (byte * hptr = hdr_buf)
         {
             SectionHeader * hdr = (SectionHeader*) hptr;
+            Console.WriteLine($"(DEBUG) IPC: Section type: {hdr->SectionType}, Size: {hdr->SectionSize}");
             byte[] body = new byte[hdr->SectionSize];
             amt = sock.Receive(body);
             if (Sections.TryGetValue((SectionType)hdr->SectionType, out IIPCSection sec)) {
@@ -85,5 +92,10 @@ class IPC(Socket s)
         var hdr = new ReadOnlySpan<byte>((byte*)&header, sizeof(SectionHeader));
         sock.Send(hdr);
         sock.Send(data);
+    }
+
+    void AddSection(IIPCSection sec)
+    {
+        Sections[sec.ID] = sec;
     }
 }

@@ -25,7 +25,19 @@ bool SetIDRead(CByondValue& ss, void * blk, size_t sec_size) {
     }
     CByondValue idv;
     ByondValue_SetStr(&idv, res->id);
-    Byond_WriteVar(&val, "id", &idv);
+    if (!ByondValue_IsStr(&idv)) {
+        WTF_BWOINK(ss, "string to be set is not string");
+    }
+    if (!Byond_WriteVar(&val, "id", &idv)) {
+        WTF_BWOINK(ss, "failed to set var");
+    }
+    // temp
+    u4c count;
+    Byond_ToString(&val, NULL, &count);
+    char * buf = (char*) sc_alloc(count);
+    Byond_ToString(&val, buf, &count);
+    printf("(DEBUG) SetID of ref %u (%s) to %s\n", res->ref, buf, res->id);
+    sc_free(buf);
     return true;
 }
 
