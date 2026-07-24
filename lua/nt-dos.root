@@ -1,8 +1,15 @@
 @root nt-dos
 @output nt-dos-root.db
+
+# setup shadow table
+@exec CREATE TABLE shadow (name text NOT NULL, id int NOT NULL, eid int NOT NULL, realname text NOT NULL, hash text NOT NULL, flags int NOT NULL);
+@exec INSERT INTO shadow DATA ("root", 0, -1, "Local Admin", "", 1);
+
+# setup group table
+
 ~	chown=0:0
 ~bin/	chmod=rwxrwxr-x
 ~daemon/	chmod=rwxrwxr-x
 ~lib/	$ext=lua	chmod=rwxrwxr-x
 -.install
-+user	directory
++user	type=directory
