@@ -10,10 +10,17 @@ class EEPROM : AbstractPeripheral
     Dictionary<string,byte[]> config = [];
     int config_size = 0;
     Dictionary<string, IPeripheral.PeripheralCallback> callbacks;
+    uint _ref;
+
+    public override uint GetRef()
+    {
+        return _ref;
+    }
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-    private EEPROM() : base("eeprom")
+    private EEPROM(uint rid) : base("eeprom")
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     {
+        _ref = rid;
         callbacks = new()
         {
             {"code", Code},
@@ -28,7 +35,7 @@ class EEPROM : AbstractPeripheral
         }
     }
 
-    public EEPROM(string path) : this()
+    public EEPROM(uint rid, string path) : this(rid)
     {
         var stream = File.OpenRead(path);
         code = new byte[stream.Length];
@@ -36,7 +43,7 @@ class EEPROM : AbstractPeripheral
         stream.Close();
     }
 
-    public EEPROM(byte[] bytes) : this()
+    public EEPROM(uint rid, byte[] bytes) : this(rid)
     {
         code = bytes;
     }
