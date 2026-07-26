@@ -83,7 +83,7 @@ class SqlFs
 
     public int LookupFile(string? path)
     {
-        Console.WriteLine(path);
+        //Console.WriteLine(path);
         if (path != null && mapping.TryGetValue(path, out int val))
             return val;
         else
@@ -143,6 +143,7 @@ class SqlFs
 
     public void AddEntry(SCStat st)
     {
+        Console.WriteLine(st.Path);
         int parent = LookupFile(Path.GetDirectoryName(st.Path));
         string name = Path.GetFileName(st.Path);
         int fz = 0;
@@ -150,6 +151,7 @@ class SqlFs
         {
             fz = (int)(new FileInfo(st.RealPath).Length & 0x7FFF_FFFF);
         }
+        //Console.WriteLine($"{st.Path}: {st.Type} - {st.Perms} ({st.Perms | (short)(st.Type << 12)})");
         int ind = NewEntry(name, parent, st.Owner, st.Group, 0, st.Perms | (short)(st.Type << 12), fz, (st.Type == SCStat.Link) ? st.Target : null);
         if (st.Type == SCStat.File && !st.Virtual)
         {

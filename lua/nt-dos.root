@@ -11,7 +11,9 @@
 
 # setup groups table
 
-~	chown=0:0
+~	chown=0:0   chmod=rw-rw-r--
+~   $type=directory chmod=rwxr-xr-x
+~init.lua   chmod=rw-rw----
 ~bin/	chmod=rwxrwxr-x
 ~daemon/	chmod=rwxrwxr-x
 ~lib/	$ext=lua	chmod=rwxrwxr-x

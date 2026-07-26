@@ -134,16 +134,17 @@ class BuildScript
                 Path = vfile.path
             };
             if (!DoesFilterApply(stat, vfile)) continue;
-            ApplyRule(stat, vfile); // this always applies first!
-            if (!ApplyRules(stat)) continue;
+            ApplyRule(ref stat, vfile); // this always applies first!
+            if (!ApplyRules(ref stat)) continue;
             fs.AddEntry(stat);
         }
     }
 
     bool PathCompare(string pat, string path)
     {
-        string[] p1_parts = pat.Split('/');
-        string[] p2_parts = pat.Split('/');
+        if (pat == "") return true;
+        string[] p1_parts = pat.Trim('/').Split('/');
+        string[] p2_parts = path.Split('/');
         if (p1_parts.Length > p2_parts.Length) return false;
         if (p1_parts.Length == p2_parts.Length && pat.EndsWith('/')) return false;
         for (int i=0; i<p1_parts.Length; ++i)
@@ -185,7 +186,7 @@ class BuildScript
             switch (filt.Key)
             {
                 case "ext":
-                    if (Path.GetExtension(st.Path).Substring(2) != filt.Value) return false;
+                    if (Path.GetExtension(st.Path).Trim('.') != filt.Value) return false;
                     break;
                 case "type":
                     if (st.Type != TypeMap(filt.Value)) return false;
@@ -215,7 +216,7 @@ class BuildScript
         short res = 0;
         for (int i=0; i<rwx.Length; i++)
         {
-            if (rwx[rwx.Length-i-1] != '-')
+            if (rwx[i] != '-')
             {
                 res |= (short) (1<<i);
             }
@@ -223,7 +224,7 @@ class BuildScript
         return res;
     }
 
-    void ApplyRule(SCStat st, BuildRule rule)
+    void ApplyRule(ref SCStat st, BuildRule rule)
     {
         foreach (var fx in rule.args)
         {
@@ -241,6 +242,7 @@ class BuildScript
                 case "chmod":
                     // set perms
                     st.Perms = RwxParse(fx.Value);
+                    //Console.WriteLine($"{st.Path}: {st.Perms}");
                     break;
                 case "type":
                     if (rule.type == '+')
@@ -261,14 +263,15 @@ class BuildScript
         }
     }
 
-    bool ApplyRules(SCStat stat)
+    bool ApplyRules(ref SCStat stat)
     {
         foreach (var rule in rules)
         {
             if (DoesFilterApply(stat, rule))
             {
+                if (rule.type == '-') Console.WriteLine("EXCLUSION TRIGGERED: "+rule);
                 if (rule.type == '-') return false;
-                else if (rule.type == '~') ApplyRule(stat, rule);
+                else if (rule.type == '~') ApplyRule(ref stat, rule);
                 else Console.Error.WriteLine($"Warning: Unknown rule type '{rule.type}' ({rule})");
             }
         }
@@ -292,7 +295,7 @@ class BuildScript
         {
             stat.Type = SCStat.File;
         }
-        if (!ApplyRules(stat)) return;
+        if (!ApplyRules(ref stat)) return;
         fs.AddEntry(stat);
     }
 
