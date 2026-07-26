@@ -119,4 +119,44 @@ class SqlFs
         int id = NewEntry(Path.GetFileName(name), LookupFile(Path.GetDirectoryName(rel)), 0, 0, 0, 0x1000, 0, null);
         mapping[rel] = id;
     }
+
+    void WriteFile(int inode, string path)
+    {
+        int fz = (int)(new FileInfo(path).Length & 0x7FFF_FFFF);
+        var query = new SQLiteCommand("INSERT INTO fdata (inode, blkid, data) VALUES (@inode, @blkid, @data);", con);
+        query.Parameters.Add("@inode", System.Data.DbType.Int32);
+        query.Parameters.Add("@blkid", System.Data.DbType.Int32);
+        query.Parameters.Add("@data", System.Data.DbType.Binary);
+        query.Prepare();
+        query.Parameters["@inode"].Value = inode;
+        using var fs = File.OpenRead(path);
+        int id = 0;
+        byte[] buffer = new byte[512];
+        while (fz > 0)
+        {
+            fz -= fs.Read(buffer, 0, 512);
+            query.Parameters["@blkid"].Value = id++;
+            query.Parameters["@data"].Value = buffer;
+            query.ExecuteNonQuery();
+        }
+    }
+
+    public void AddEntry(SCStat st)
+    {
+        int parent = LookupFile(Path.GetDirectoryName(st.Path));
+        string name = Path.GetFileName(st.Path);
+        int fz = 0;
+        if (st.Type == SCStat.File && !st.Virtual)
+        {
+            fz = (int)(new FileInfo(st.RealPath).Length & 0x7FFF_FFFF);
+        }
+        int ind = NewEntry(name, parent, st.Owner, st.Group, 0, st.Perms | (short)(st.Type << 12), fz, (st.Type == SCStat.Link) ? st.Target : null);
+        if (st.Type == SCStat.File && !st.Virtual)
+        {
+            WriteFile(ind, st.RealPath);
+        } else if (st.Type == SCStat.Dir)
+        {
+            mapping[st.Path] = ind;
+        }
+    }
 }

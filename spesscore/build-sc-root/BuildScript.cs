@@ -26,6 +26,7 @@ class BuildScript
     }
 
     List<BuildRule> rules = [];
+    List<BuildRule> virt_files = [];
     public List<(string,string)> commands = [];
     delegate void ScriptCommand(string arg);
 
@@ -98,9 +99,14 @@ class BuildScript
                     if (rpath[0] == '$')
                         rule.rules[kvpair.Item1[1..]] = kvpair.Item2;
                     else
-                        rule.rules[kvpair.Item1] = kvpair.Item2;
+                        rule.args[kvpair.Item1] = kvpair.Item2;
                 }
-                rules.Add(rule);
+                if (rule.type == '+')
+                {
+                    virt_files.Add(rule);
+                } else {
+                    rules.Add(rule);
+                }
             }
         }
     }
@@ -115,20 +121,179 @@ class BuildScript
                 Environment.Exit(1);
             } else
             {
-                Console.WriteLine($"CMD: {cmd.Item1} - {cmd.Item2}");
+                //Console.WriteLine($"CMD: {cmd.Item1} - {cmd.Item2}");
                 del(cmd.Item2);
             }
         }
-        foreach (var rule in rules)
-        {
-            Console.WriteLine($"RULE: {rule}");
-        }
         Recurse();
+        foreach (var vfile in virt_files)
+        {
+            SCStat stat = new()
+            {
+                Virtual = true,
+                Path = vfile.path
+            };
+            if (!DoesFilterApply(stat, vfile)) continue;
+            ApplyRule(stat, vfile); // this always applies first!
+            if (!ApplyRules(stat)) continue;
+            fs.AddEntry(stat);
+        }
     }
 
-    void ActAndApply(string realpath)
+    bool PathCompare(string pat, string path)
     {
-        
+        string[] p1_parts = pat.Split('/');
+        string[] p2_parts = pat.Split('/');
+        if (p1_parts.Length > p2_parts.Length) return false;
+        if (p1_parts.Length == p2_parts.Length && pat.EndsWith('/')) return false;
+        for (int i=0; i<p1_parts.Length; ++i)
+        {
+            if (p1_parts[i] != p2_parts[i]) return false;
+        }
+        return true;
+    }
+
+    static Dictionary<string,byte> type_map = new()
+    {
+        {"directory", 0x1},
+        {"dir", 0x1},
+        {"folder", 0x1},
+        {"file", 0x2},
+        {"normal", 0x2},
+        {"regular", 0x2},
+        {"symlink", 0x3},
+        {"link", 0x3}
+    };
+
+    byte TypeMap(string key)
+    {
+        if (type_map.TryGetValue(key.ToLower(), out byte val))
+        {
+            return val;
+        } else
+        {
+            Console.Error.WriteLine("Warning: unknown file type: "+key.ToLower());
+            return 0;
+        }
+    }
+
+    bool DoesFilterApply(SCStat st, BuildRule rule)
+    {
+        if (!PathCompare(rule.path, st.Path)) return false;
+        foreach (var filt in rule.rules)
+        {
+            switch (filt.Key)
+            {
+                case "ext":
+                    if (Path.GetExtension(st.Path).Substring(2) != filt.Value) return false;
+                    break;
+                case "type":
+                    if (st.Type != TypeMap(filt.Value)) return false;
+                    break;
+                case "virtual":
+                case "virt":
+                    if (!st.Virtual) return false;
+                    break;
+                case "physical":
+                case "real":
+                    if (st.Virtual) return false;
+                    break;
+                case "!exists":
+                    string path = Path.Join(fsrc, rule.path);
+                    if (File.Exists(path) || Directory.Exists(path)) return false;
+                    break;
+                default:
+                    Console.Error.WriteLine("Warning: Unknown filter: "+filt.Key);
+                    break;
+            }
+        }
+        return true;
+    }
+
+    short RwxParse(string rwx)
+    {
+        short res = 0;
+        for (int i=0; i<rwx.Length; i++)
+        {
+            if (rwx[rwx.Length-i-1] != '-')
+            {
+                res |= (short) (1<<i);
+            }
+        }
+        return res;
+    }
+
+    void ApplyRule(SCStat st, BuildRule rule)
+    {
+        foreach (var fx in rule.args)
+        {
+            switch (fx.Key)
+            {
+                case "chown":
+                    // set owner/group
+                    int idx = fx.Value.IndexOf(":");
+                    string oid = fx.Value[..idx];
+                    string gid = fx.Value[(idx+1)..];
+                    //Console.WriteLine($"oid: {oid}, gid: {gid}");
+                    st.Owner = short.Parse(oid, System.Globalization.NumberStyles.None);
+                    st.Group = short.Parse(gid, System.Globalization.NumberStyles.None);
+                    break;
+                case "chmod":
+                    // set perms
+                    st.Perms = RwxParse(fx.Value);
+                    break;
+                case "type":
+                    if (rule.type == '+')
+                    {
+                        st.Type = TypeMap(fx.Value);
+                    } else
+                    {
+                        Console.Error.WriteLine($"Warning: 'type' argument not valid for rule ({rule})");
+                    }
+                    break;
+                case "target":
+                    st.Target = fx.Value;
+                    break;
+                default:
+                    Console.Error.WriteLine($"Unknown effect {fx.Key} ({rule})");
+                    break;
+            }
+        }
+    }
+
+    bool ApplyRules(SCStat stat)
+    {
+        foreach (var rule in rules)
+        {
+            if (DoesFilterApply(stat, rule))
+            {
+                if (rule.type == '-') return false;
+                else if (rule.type == '~') ApplyRule(stat, rule);
+                else Console.Error.WriteLine($"Warning: Unknown rule type '{rule.type}' ({rule})");
+            }
+        }
+        return true;
+    }
+
+    void ActAndApply(string ent)
+    {
+        string rpath = Path.GetRelativePath(fsrc, ent);
+        SCStat stat = new()
+        {
+            RealPath = ent,
+            Path = rpath,
+            Virtual = false
+        };
+        var attr = File.GetAttributes(ent);
+        if ((attr & FileAttributes.Directory) > 0)
+        {
+            stat.Type = SCStat.Dir;
+        } else
+        {
+            stat.Type = SCStat.File;
+        }
+        if (!ApplyRules(stat)) return;
+        fs.AddEntry(stat);
     }
 
     void Recurse()
@@ -136,14 +301,7 @@ class BuildScript
         var tr = fs.con.BeginTransaction();
         foreach (var ent in Directory.EnumerateFileSystemEntries(fsrc, "*", SearchOption.AllDirectories))
         {
-            var attr = File.GetAttributes(ent);
-            if ((attr & FileAttributes.Directory) > 0)
-            {
-                fs.AddDirectory(ent);
-            } else
-            {
-                fs.AddFile(ent);
-            }
+            ActAndApply(ent);
         }
         tr.Commit();
     }
