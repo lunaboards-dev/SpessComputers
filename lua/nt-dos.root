@@ -2,8 +2,14 @@
 @output nt-dos-root.db
 
 # setup shadow table
-@exec CREATE TABLE shadow (name text NOT NULL, id int NOT NULL, eid int NOT NULL, realname text NOT NULL, hash text NOT NULL, flags int NOT NULL);
-@exec INSERT INTO shadow VALUES ("root", 0, -1, "Local Admin", "", 1);
+@exec CREATE TABLE shadow (pk INTEGER PRIMARY KEY, id int GENERATED ALWAYS AS (pk - 1) STORED UNIQUE, name text NOT NULL, eid int NOT NULL, realname text NOT NULL, hash text NOT NULL, flags int NOT NULL, groups text NOT NULL);
+@exec INSERT INTO shadow (name, eid, realname, hash, flags, groups) VALUES ("root", -1, "Local Admin", "", 1, "[0]");
+
+# setup groups table
+@exec CREATE TABLE groups (pk INTEGER PRIMARY KEY, id int GENERATED ALWAYS AS (pk - 1) STORED UNIQUE, name text NOT NULL, desc text NOT NULL, flags int NOT NULL);
+@exec INSERT INTO groups (name, desc, flags) VALUES ("root", "Root access", 0);
+
+# setup groups table
 
 ~	chown=0:0
 ~bin/	chmod=rwxrwxr-x
