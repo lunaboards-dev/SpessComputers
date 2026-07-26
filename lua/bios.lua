@@ -20,18 +20,29 @@ For use on authorized hardware only.
 Strike TAB to interrupt boot
 ]]
 
-local function finfo(dev, store, name)
-    local inode, size = dev:query(string.format("SELECT inode, size FROM meta WHERE store=%q AND name=%q", store, name))
-    if not inode then return nil, "not found" end
-    return inode, size
+local function get_entry(dev, name, parent)
+    local reader = dev:query("select * from fmeta where name=? and parent=?", name, parent)
+    if reader:length() == 0 then return end
+    return reader:next()
 end
 
-local function read_file(dev, store, name)
-    local inode, size = finfo(dev, store, name)
-    if not inode then return nil, size end
+local function lookup_file(dev, path)
+    path = path:gsub("/+", "/"):gsub("/$", ""):gsub("^/", "")
+    local parent = {}
+    for part in path:gmatch("[^/]+") do
+        parent = get_entry(dev, part, parent.inode)
+        if not parent then return nil, "not found" end
+    end
+    return parent
+end
+
+local function read_file(dev, name)
+    local stat, err = lookup_file(dev, name)
+    if not stat then return nil, err end
+    local inode, size = stat.inode, stat.size
     local rtv = {}
     while size > 0 do
-        local blk = dev:query(string.format("SELECT data FROM fdat WHERE inode=%q and block=%q", inode, #rtv))
+        local blk = dev:query_first("select data from fdata where inode=? and blkid=?", inode, #rtv)
         if not blk then return nil, "corrupt file record" end
         table.insert(rtv, blk)
         size = size - #blk

@@ -3,7 +3,7 @@ using System.Data.SQLite;
 using static spesscore.VM.Lua;
 using static spesscore.VM.Helpers;
 
-namespace spesscore.VM.Peripheral;
+namespace spesscore.VM.Peripheral.Disk;
 
 class ManagedDisk : AbstractPeripheral
 {
