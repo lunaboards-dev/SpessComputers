@@ -633,3 +633,4 @@ vite.config.ts.timestamp-*
 *.dll
 *.lib
 *.a
+*.db
