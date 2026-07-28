@@ -6,12 +6,14 @@ using System.Data.Common;
 
 static class QueryReader
 {
-    static int Push(SQLiteDataReader reader)
+    public static int Push(lua_State L, SQLiteDataReader reader)
     {
+        lua_PushObjectManaged(L, reader);
+        luaL_setmetatable(L, "SqlQueryReader");
         return 1;
     }
 
-    static void InitLib(lua_State L)
+    public static void InitLib(lua_State L)
     {
         luaL_newmetatable(L, "SqlQueryReader");
             lua_pushstring(L, "__index");

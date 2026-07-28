@@ -26,7 +26,8 @@ class ComputerLib : Library
             //{"set_thd", SetThread},
             {"pull_signal", PullSignal},
             {"thd_resume", ThdResume},
-            {"int_yield", OnlyYield}
+            {"int_yield", OnlyYield},
+            {"is_iores", IsIoresume}
         };
     }
 
@@ -140,6 +141,12 @@ class ComputerLib : Library
     {
         //Computer c = lua_ToObject<Computer>(L, 1);
         lua_pushboolean(L, c.paused ? 1 : 0);
+        return 1;
+    }
+
+    int IsIoresume(lua_State L)
+    {
+        lua_pushboolean(L, c.iores ? 1 : 0);
         return 1;
     }
 

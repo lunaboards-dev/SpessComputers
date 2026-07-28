@@ -10,14 +10,33 @@ class ManagedDisk : AbstractPeripheral
     SQLiteConnection? db;
     int capacity = 0;
     bool can_pragma = false;
+    bool read_only = false;
     //bool paused = false;
     public bool IsValid => Computer != null;
 
-    public override Dictionary<string, IPeripheral.PeripheralCallback> Callbacks => throw new NotImplementedException();
+    public override Dictionary<string, IPeripheral.PeripheralCallback> Callbacks => methods;
 
-    public ManagedDisk() : base("disk")
+    Dictionary<string, IPeripheral.PeripheralCallback> methods;
+
+    ManagedDisk() : base("disk")
+    {
+        methods = new()
+        {
+            {"query", Query}
+        };
+    }
+
+    public ManagedDisk(uint refid) : this()
     {
         // don't actually do anything until we're assigned an ID.
+    }
+
+    public ManagedDisk(uint refid, string static_path) : this()
+    {
+        // do things
+        read_only = true;
+        db = new SQLiteConnection($"Data Source={static_path};Mode=ReadOnly;");
+        db.Authorize += Authorize;
     }
 
     void ExecuteNonQuery(string command)
@@ -60,6 +79,7 @@ class ManagedDisk : AbstractPeripheral
 
     public override void SetID(string id)
     {
+        if (read_only) return;
         if (db != null)
         {
             // close and delete
@@ -73,8 +93,8 @@ class ManagedDisk : AbstractPeripheral
         can_pragma = true;
         ExecuteNonQuery($"PRAGMA page_size=512; PRAGMA max_page_count={capacity*2};");
         can_pragma = false;
-        if (!Config.NoCreateDefaultTables)
-            ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS FileMetadata (
+        //if (!Config.NoCreateDefaultTables);
+            /* ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS FileMetadata (
                 Inode INTEGER PRIMARY KEY AUTOINCREMENT,
                 Parent INTEGER,
                 Filename STRING NOT NULL,
@@ -90,43 +110,7 @@ class ManagedDisk : AbstractPeripheral
                 Data BLOB NOT NULL,
 
                 FOREIGN KEY (Inode) REFERENCES FileMetadata(Inode)
-            );");
-    }
-
-    int PushResultTuple(lua_State L, SQLiteDataReader reader)
-    {
-        int cols = reader.FieldCount;
-        for (int i=0;i<cols;++i)
-        {
-            switch(reader.GetFieldAffinity(i))
-            {
-                case TypeAffinity.Uninitialized:
-                case TypeAffinity.Null:
-                    lua_pushnil(L);
-                    break;
-                case TypeAffinity.Int64:
-                    lua_pushinteger(L, reader.GetInt64(i));
-                    break;
-                case TypeAffinity.Double:
-                    lua_pushnumber(L, reader.GetDouble(i));
-                    break;
-                /* case TypeAffinity.Text:
-                    L.PushString(reader.GetString(i));
-                    break; */
-                case TypeAffinity.Blob:
-                    var blob = reader.GetBlob(i, true);
-                    int size = blob.GetCount();
-                    byte[] buffer = new byte[size];
-                    blob.Read(buffer, size, 0);
-                    lua_pushbytebuffer(L, buffer);
-                    break;
-                default:
-                    lua_pushstring(L, reader.GetString(i));
-                    break;
-            }
-        }
-        reader.Close();
-        return cols;
+            );"); */
     }
 
     SQLiteCommand GenStatement(lua_State L, int query, string statement)
@@ -214,11 +198,9 @@ class ManagedDisk : AbstractPeripheral
 
     async Task ExecuteQuery(SQLiteCommand cmd)
     {
-        var read = cmd.ExecuteReader();
-        if (read.IsClosed)
-        {
-            
-        }
+        var reader = await cmd.ExecuteReaderAsync();
+        res = (SQLiteDataReader) reader;
+        Computer.ExitIOWait();
     }
 
     int Select(lua_State L)
@@ -231,7 +213,7 @@ class ManagedDisk : AbstractPeripheral
             Value = table
         });
         var reader = query.ExecuteReader();
-        return PushResultTuple(L, reader);
+        return QueryReader.Push(L, reader);
     }
 
     int Insert(lua_State L)
@@ -269,9 +251,51 @@ class ManagedDisk : AbstractPeripheral
         return 0;
     }
 
+    SQLiteDataReader? res;
     int Query(lua_State L)
     {
-        return lua_yield(L, 0);
+        string cstr = luaL_checkstring(L, 2);
+        var cmd = new SQLiteCommand(cstr, db);
+        int expected_args = cstr.Where((c) => c == '?').Count();
+        for (int i=3;i<lua_gettop(L); ++i)
+        {
+            SQLiteParameter param = new();
+            switch (lua_type(L, i))
+            {
+                case LUA_TSTRING:
+                    param.Value = lua_tobytebuffer(L, i);
+                    break;
+                case LUA_TBOOLEAN:
+                    param.Value = lua_toboolean(L, i);
+                    break;
+                case LUA_TNUMBER:
+                    if (lua_isinteger(L, i))
+                        param.Value = lua_tointeger(L, i);
+                    else
+                        param.Value = lua_tonumber(L, i);
+                    break;
+                default:
+                    param.Value = null;
+                    break;
+            }
+            cmd.Parameters.Add(param);
+        }
+        // pad with NULL.
+        int missing = expected_args-cmd.Parameters.Count;
+        for (int i=0; i<missing;++i)
+        {
+            cmd.Parameters.Add(new SQLiteParameter()
+            {
+                Value = null
+            });
+        }
+        _ = ExecuteQuery(cmd);
+        return Computer.EnterIOWait((L) =>
+        {
+            QueryReader.Push(L, res); // this will never be null
+            res = null;
+            return 1;
+        });
     }
 
     public override void Destroy()

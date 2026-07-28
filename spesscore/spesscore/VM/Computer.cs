@@ -12,6 +12,8 @@ namespace spesscore.VM;
 
 class Computer
 {
+    public delegate int IOYieldCallback(lua_State L);
+    IOYieldCallback? ioyield;
     protected internal int max_memory = 1024*1024;
     protected internal int currently_allocated = 0;
     protected internal List<IPeripheral> Peripherals = [];
@@ -25,10 +27,15 @@ class Computer
     protected internal bool init_once = false;
     protected internal bool paused = false;
     protected internal bool iowait = false;
+    protected internal bool iores = false;
     public int SignalCount => events.Size;
     public readonly Lock pauselock = new();
     public readonly Lock Lock = new();
     protected internal readonly Lock PLL = new();
+    public int strikes = 0;
+    public double exec_deadline = 0;
+    public double exec_hardline = 0;
+    public int punishment = 0;
     ComputerLib lib;
 
     lua_Alloc MemAlloc;
@@ -92,11 +99,11 @@ class Computer
             lua_close(L);
         }
         init_once = true;
-        Console.WriteLine("LUA OPEN");
         L = lua_newstate(MemAlloc, 0);//new Lua(Allocator, 0);
         //L = lua_newthread(PL);
         luaL_openlibs(L);
         lib.Push(L);
+        QueryReader.InitLib(L);
     }
 
     static lua_CFunction PerCallDel = PeripheralCall;
@@ -200,6 +207,13 @@ class Computer
         }
     }
 
+    public int Yield(lua_State L)
+    {
+        Deadline = Times.CurTime+0.005;
+        paused = true;
+        return lua_yield(L, 0);
+    }
+
     // STAHP! NO!
     public void Stop()
     {
@@ -221,8 +235,9 @@ class Computer
     {
         //Console.WriteLine("STOP EXEC");
         //Console.WriteLine($"Paused in {ar.currentline}");
-        lua_yield(L, 0);
+        Yield(L);
         lua_sethook(L, null, 0, 0);
+        lock(PLL) iores = false;
         //DumpStack(L);
     }
 
@@ -262,7 +277,21 @@ class Computer
             //lua_sethook(L, PauseExecDel, 0, 0);
             paused = false;
         }
-        int state = lua_resume(L, 0, 0, ref remove);
+        int rtv = 0;
+        if (ioyield != null)
+        {
+            rtv = ioyield(L);
+            ioyield = null;
+        }
+        exec_deadline = Times.CurTime + Config.ContextSwitchTime;
+        exec_hardline = Times.CurTime + (Config.ContextSwitchTime * 10); // pass this and you will DIE
+        int state = lua_resume(L, 0, rtv, ref remove);
+        double end_time = Times.CurTime;
+        if (end_time >= exec_hardline)
+        {
+            LocalTTY?.Write("Watchdog triggered!");
+            return true; // NOT INTO THE PIT, IT BURNS
+        }
         bool dead = state != LUA_YIELD;
         if (dead && state != LUA_OK)
         {
@@ -270,6 +299,8 @@ class Computer
             LocalTTY?.Write("FAILED TO RESUME: "+err);
         }
         lua_pop(L, remove);
+        // calculate our punishment (reaper thread cycles before we're allowed to resume)
+        punishment = (int)Math.Floor((end_time-exec_deadline)/Config.ContextSwitchTime);
         return dead;
     }
 
@@ -321,11 +352,13 @@ class Computer
         events.Put(signal);
     }
 
-    public void EnterIOWait()
+    public int EnterIOWait(IOYieldCallback callback)
     {
-        lock (pauselock) {
+        lock (PLL) lock (pauselock) {
             iowait = true;
-            Pause();
+            paused = true;
+            ioyield = callback;
+            return lua_yield(L, 0);
         }
     }
 
@@ -334,6 +367,8 @@ class Computer
         lock (pauselock)
         {
             iowait = false;
+            paused = false;
+            iores = true;
         }
     }
 

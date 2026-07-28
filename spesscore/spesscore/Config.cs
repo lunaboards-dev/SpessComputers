@@ -19,6 +19,9 @@ public static class Config
     public static bool DebugEnableControlWS; // YOU SHOULD NEVER EVER EVER USE THIS IN PRODUCTION
     public static bool AllowCustomEEPROMCode;
     public static int ParentPID;
+    public static int ContextSwitchRate;
+    public static double ContextSwitchTime;
+    public static string DebugTestImage;
 
     static void TrySet(Dictionary<string,string> keys, string key, string fallback, out string value)
     {
@@ -81,6 +84,9 @@ public static class Config
         TrySet(keys, "memorysizes", [128, 256, 512, 1024, 512, 1024, 2048, 3072], MemorySizes);
         TrySet(keys, "disksizes", [512, 1024, 2048, 4096, 8192], DiskSizes);
         TrySet(keys, "parentpid", -1, out ParentPID);
+        TrySet(keys, "contextswitchrate", 200, out ContextSwitchRate);
+        ContextSwitchTime = 1f/(double)ContextSwitchRate;
+        TrySet(keys, "debugtestimage", "", out DebugTestImage);
     }
 }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.

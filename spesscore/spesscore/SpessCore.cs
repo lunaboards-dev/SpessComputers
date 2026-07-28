@@ -8,6 +8,7 @@ using spesscore.IPC;
 using spesscore.Terminal;
 using spesscore.VM;
 using spesscore.VM.Peripheral;
+using spesscore.VM.Peripheral.Disk;
 using WatsonWebsocket;
 
 namespace spesscore;
@@ -148,6 +149,13 @@ class SpessCore
         AddPeripheral(tty);
         comp.AddPeripheral(tty);
         comp.SetLocalTTY(tty.ID);
+
+        ManagedDisk disk = new(0, Config.DebugTestImage);
+        AddPeripheral(disk);
+        comp.AddPeripheral(disk);
+        comp.Disk = disk;
+
+
         Computers.Add(comp);
         return comp;
     }

@@ -1,0 +1,4 @@
+@source tests
+@output tests.db
+
+# honestly, we don't need to do much, this should never be exposed to users
