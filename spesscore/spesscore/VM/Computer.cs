@@ -6,6 +6,7 @@ using static spesscore.VM.Helpers;
 using System.Text;
 using Cyotek.Collections.Generic;
 using spesscore.VM.Libraries;
+using spesscore.VM.Peripheral.Disk;
 
 namespace spesscore.VM;
 

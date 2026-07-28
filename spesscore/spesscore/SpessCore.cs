@@ -140,7 +140,7 @@ class SpessCore
         byte[] bios = new byte[str.Length];
         str.Read(bios);
         Computer comp = new();
-        EEPROM eeprom = new(bios);
+        EEPROM eeprom = new(0, bios);
         AddPeripheral(eeprom);
         comp.AddPeripheral(eeprom);
         comp.eeprom = eeprom;
