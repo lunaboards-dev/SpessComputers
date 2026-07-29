@@ -47,8 +47,6 @@ abstract class AbstractPeripheral(string name) : IPeripheral
         }
     }
 
-    
-
     public virtual uint GetRef()
     {
         return 0;

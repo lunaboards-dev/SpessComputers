@@ -15,29 +15,16 @@ static class QueryReader
 
     public static void InitLib(lua_State L)
     {
-        luaL_newmetatable(L, "SqlQueryReader");
-            lua_pushstring(L, "__index");
-            lua_newtable(L);
-                lua_pushstring(L, "empty");
-                lua_pushcfunction(L, EmptyDel);
-                lua_settable(L, -3);
-                lua_pushstring(L, "read");
-                lua_pushcfunction(L, ReadDel);
-                lua_settable(L, -3);
-                lua_pushstring(L, "rows");
-                lua_pushcfunction(L, RowsDel);
-                lua_settable(L, -3);
-                lua_pushstring(L, "next");
-                lua_pushcfunction(L, NextDel);
-                lua_settable(L, -3);
-                lua_pushstring(L, "values");
-                lua_pushcfunction(L, ValuesDel);
-                lua_settable(L, -3);
-            lua_settable(L, -3);
-            lua_pushstring(L, "__gc");
-            lua_pushcfunction(L, ReleaseObjectDelegate);
-            lua_settable(L, -3);
-        lua_pop(L, 1);
+        var mt = new MetatableBuilder(L, "SqlQueryReader");
+        var it = mt.SetTable("__index");
+        it.SetFunction("empty", EmptyDel);
+        it.SetFunction("read", ReadDel);
+        it.SetFunction("rows", RowsDel);
+        it.SetFunction("next", NextDel);
+        it.SetFunction("values", ValuesDel);
+        it.Close();
+        it.SetFunction("__gc", ReleaseObjectDelegate);
+        it.Close();
     }
 
     static lua_CFunction EmptyDel = Empty;
