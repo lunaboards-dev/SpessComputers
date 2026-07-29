@@ -16,7 +16,7 @@ class TerminalServer
 
     public TerminalServer(ushort port)
     {
-        Server = new("192.168.1.99", port, false);
+        Server = new("127.0.0.1", port, false);
         Server.ClientConnected += WsConnected;
         Server.MessageReceived += WsMessage;
         Server.ClientDisconnected += WsDisconnect;
@@ -33,6 +33,7 @@ class TerminalServer
             list.Ctx.Remove(cid);
             GuidLookup.Remove(cid);
         }
+        Console.WriteLine($"WS disconnect: {e.Client}");
     }
 
     public TerminalListener NewListener(string ID)
@@ -51,12 +52,20 @@ class TerminalServer
         0x01 - stdin
         0x02 - signaling (json)
     */
+    public void Kick(Guid client, string reason)
+    {
+        Console.WriteLine($"Killed {client}: {reason}");
+        Server.DisconnectClient(client);
+    }
+
     void WsMessage(object? sender, MessageReceivedEventArgs args)
     {
         var cid = args.Client.Guid;
         if (debug?.gid == cid)
         {
+            Console.WriteLine($"DEBUG: {Encoding.UTF8.GetString(args.Data.Array)}");
             if (args.Data.Array != null) debug.Process(args.Data.Array);
+            Console.WriteLine($"RAN: {Encoding.UTF8.GetString(args.Data.Array)}");
             return;
         }
         if (Pending.Contains(cid))
@@ -129,10 +138,17 @@ class TerminalServer
                         term?.Computer?.TryResume();
                     }
                     return;
+                } else
+                {
+                    Kick(cid, "Unknown command byte: "+args.Data[0]);
+                    return;
                 }
             }
+        } else
+        {
+            Kick(cid, "Not allowed.");
         }
-        Server.DisconnectClient(cid); // destroy the child
+        Kick(cid, "unknown"); // destroy the child
     }
 
     void WsConnected(object? sender, ConnectionEventArgs args)
@@ -142,7 +158,8 @@ class TerminalServer
         {
             if (!Config.DebugEnableControlWS)
             {
-                Server.DisconnectClient(args.Client.Guid);
+                //Server.DisconnectClient(args.Client.Guid);
+                Kick(args.Client.Guid, "Debug WS not allwed.");
             } else
             {
                 debug = new Controller()
@@ -155,7 +172,7 @@ class TerminalServer
             Pending.Add(args.Client.Guid);
         } else
         {
-            Server.DisconnectClient(args.Client.Guid);
+            Kick(args.Client.Guid, "Not found.");
         }
     }
 

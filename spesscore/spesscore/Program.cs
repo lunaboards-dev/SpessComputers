@@ -10,8 +10,9 @@ foreach (string arg in args)
     int pos;
     if ((pos = arg.IndexOf('=')) > 0)
     {
-        string key = arg[..(pos - 1)];
+        string key = arg[..(pos)];
         string value = arg[(pos + 1)..];
+        Console.WriteLine($"key: {key}, value: {value}");
         nargs[key.ToLower()] = value;
     } else
     {

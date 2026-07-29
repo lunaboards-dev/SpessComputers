@@ -36,7 +36,8 @@ class TerminalListener(string id)
     {
         foreach (var id in Ctx)
         {
-            srv.Server.DisconnectClient(id);
+            //srv.Server.DisconnectClient(id);
+            srv.Kick(id, "Shutting down.");
         }
         srv.Remove(ID);
     }

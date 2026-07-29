@@ -1,4 +1,5 @@
 print("machine.lua")
+local _exit = os.exit
 --[[ computer = {}
 
 local c = _computer
@@ -698,25 +699,43 @@ debug = {
 local rare_fox = computer.rare_fox
 computer.rare_fox = nil
 
-xpcall(function()
-	print("yerp")
-	local tty = computer.tty()
-	--computer.set_mem_baseline()
-	computer.set_mem_baseline = nil
-	local bios = load(computer.eeprom():code(), "=bios.lua")
-	print("yerp 2")
-	computer.pull_signal()
-	bios()
-	error("halted")
-end, function(err)
-	-- print to vt
-	local tty = computer.tty()
-	if tty then
-		tty:write(debug.traceback(err):gsub("\n","\r\n"))
-		tty:write("\r\n")
-		tty:write("\27[2;60H")
-		tty:write(rare_fox())
-		 tty:write("\27[;60H Crashes are rare")
-		tty:write("\27[9;60H  As is this fox")
-	end
+local mcr = coro.create(function()
+	xpcall(function()
+		print("yerp")
+		local tty = computer.tty()
+		--computer.set_mem_baseline()
+		computer.set_mem_baseline = nil
+		computer.dump_stack()
+		tty:write("yerp2")
+		local bios = load(computer.eeprom():code(), "=bios.lua")
+		print("yerp 2")
+		computer.pull_signal()
+		bios()
+		error("halted")
+	end, function(err)
+		-- print to vt
+		local tty = computer.tty()
+		print(debug.traceback(err))
+		_exit(1)
+		if tty then
+			print(debug.traceback(err))
+			tty:write(debug.traceback(err):gsub("\n","\r\n"))
+			tty:write("\r\n")
+			tty:write("\27[2;60H")
+			tty:write(rare_fox())
+			tty:write("\27[;60H Crashes are rare")
+			tty:write("\27[9;60H  As is this fox")
+		end
+	end)
 end)
+
+computer.dump_stack()
+
+computer.tty():write("terp")
+
+print("resuming 1")
+thd_resume(mcr)
+print("resuming 2")
+while coro.status(mcr) ~= "dead" do
+	thd_resume(mcr, yield())
+end

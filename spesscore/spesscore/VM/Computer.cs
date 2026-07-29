@@ -45,6 +45,7 @@ class Computer
 
     protected internal lua_State PL;
     protected internal lua_State L;
+    protected internal lua_State BL;
 
     // cache delegates here
     public Computer()
@@ -54,17 +55,23 @@ class Computer
         lib = new(this);
     }
 
-    static void DumpStack(lua_State L)
+    public static void DumpStack(lua_State L)
     {
-        Console.WriteLine("!! STACK DUMP START");
         int size = lua_gettop(L);
+        Console.WriteLine($"!! STACK DUMP START ({size})");
         for (int i=0;i<size;++i)
         {
             string? s = lua_tostring(L, 1);//l.ToString(i+1);
             string? t = luaL_typename(L, 1);//l.TypeName(i+1);
-            Console.WriteLine($"({t})\t{s}");
+            Console.WriteLine($"[{i}]: ({t})\t{s}");
         }
         Console.WriteLine("!! STACK DUMP END");
+    }
+
+    public static int DumpStackL(lua_State L)
+    {
+        DumpStack(L);
+        return 0;
     }
 
     // lol we don't even have to change this
@@ -103,7 +110,7 @@ class Computer
         //L = lua_newthread(PL);
         luaL_openlibs(L);
         lib.Push(L);
-        QueryReader.InitLib(L);
+        //QueryReader.InitLib(L);
     }
 
     static lua_CFunction PerCallDel = PeripheralCall;
@@ -246,20 +253,22 @@ class Computer
         try {
             InitLuaState(); // oh my fucking god bruh
             //lua_sethook(L, PauseExecDel, LUA_MASKCOUNT, 5000);
-            lua_PushTemporaryObject(L, this);
-            lua_pushcclosure(L, BwoinkDel, 1);
+/*             lua_PushTemporaryObject(L, this);
+            lua_pushcclosure(L, BwoinkDel, 1); */
             //luaL_loadstring(L, Encoding.UTF8.GetString(SpessCore.Instance?.MachineLua));
             luaL_loadbufferx(L, SpessCore.Instance.MachineLua, (uint)SpessCore.Instance.MachineLua.Length, "=machine.lua", "t");
             if (lua_type(L, -1) != LUA_TFUNCTION)
             {
                 throw new Exception("Failed to load machine.lua: "+lua_tostring(L, -1));
             }
+            DumpStack(L);
             //L.LoadBuffer(SpessCore.Instance?.MachineLua, "=machine.lua");
             //lua_pcall(L, 0, 0, -2);//L.PCall(0, 0, -2);
             int c = 0;
             lock(PLL) PL = L;
             lua_resume(L, 0, 0, ref c);
             lua_pop(L, c);
+            lua_gc(BL, LUA_GCCOLLECT);
             active = true;
         } catch (Exception e)
         {
@@ -286,10 +295,18 @@ class Computer
         exec_deadline = Times.CurTime + Config.ContextSwitchTime;
         exec_hardline = Times.CurTime + (Config.ContextSwitchTime * 10); // pass this and you will DIE
         int state = lua_resume(L, 0, rtv, ref remove);
+        Console.WriteLine("Yield VM");
+        if (postrun != null)
+        {
+            postrun();
+            postrun = null;
+        }
+        Console.WriteLine("Ran postrun");
         double end_time = Times.CurTime;
         if (end_time >= exec_hardline)
         {
             LocalTTY?.Write("Watchdog triggered!");
+            Console.WriteLine("Watchdog triggered");
             return true; // NOT INTO THE PIT, IT BURNS
         }
         bool dead = state != LUA_YIELD;
@@ -301,6 +318,7 @@ class Computer
         lua_pop(L, remove);
         // calculate our punishment (reaper thread cycles before we're allowed to resume)
         punishment = (int)Math.Floor((end_time-exec_deadline)/Config.ContextSwitchTime);
+        Console.WriteLine("Punishment: "+punishment);
         return dead;
     }
 
@@ -343,6 +361,7 @@ class Computer
             running = false;
         } else
         {
+            //Console.WriteLine($"active: {active}, running: {running}, iowait: {iowait}");
             Thread.EndCriticalRegion();
         }
     }
@@ -352,18 +371,23 @@ class Computer
         events.Put(signal);
     }
 
-    public int EnterIOWait(IOYieldCallback callback)
+    Func<Task>? postrun = null;
+
+    public int EnterIOWait(IOYieldCallback callback, Func<Task> run)
     {
-        lock (PLL) lock (pauselock) {
+        Console.WriteLine("Enter I/O Wait");
             iowait = true;
             paused = true;
             ioyield = callback;
+            postrun = run;
+            Console.WriteLine("End lock(pauselock)");
             return lua_yield(L, 0);
-        }
     }
 
     public void ExitIOWait()
     {
+
+        Console.WriteLine("Begin exit I/O wait");
         lock (pauselock)
         {
             iowait = false;

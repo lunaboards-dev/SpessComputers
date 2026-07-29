@@ -46,6 +46,7 @@ class LuaExecutionManager
                         {
                             comp.Pause();
                             SpessCore.Instance.Manager.Running[pair.Key] = null;
+                            break;
                         }
                     }
                 }

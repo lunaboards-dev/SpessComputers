@@ -27,7 +27,8 @@ class ComputerLib : Library
             {"pull_signal", PullSignal},
             {"thd_resume", ThdResume},
             {"int_yield", OnlyYield},
-            {"is_iores", IsIoresume}
+            {"is_iores", IsIoresume},
+            {"dump_stack", Computer.DumpStackL}
         };
     }
 
@@ -99,6 +100,7 @@ class ComputerLib : Library
     //static lua_CFunction GetTTYDel = GetTTY;
     int GetTTY(lua_State L)
     {
+        Console.WriteLine("GetTTY");
         //Computer c = lua_ToObject<Computer>(L, 1);//Computer c = L.ToObject<Computer>(1, false);
         //DumpStack(L);
         if (c == null)
@@ -108,6 +110,7 @@ class ComputerLib : Library
         }
         if (c.LocalTTY == null) return 0;
         c.PushPeripheral(L, c.LocalTTY);
+        Console.WriteLine("GetTTY (end)");
         return 1;
     }
 

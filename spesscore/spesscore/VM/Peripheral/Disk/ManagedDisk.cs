@@ -33,10 +33,12 @@ class ManagedDisk : AbstractPeripheral
 
     public ManagedDisk(uint refid, string static_path) : this()
     {
+        Console.WriteLine("OPEN:"+static_path);
         // do things
         read_only = true;
-        db = new SQLiteConnection($"Data Source={static_path};Mode=ReadOnly;");
+        db = new SQLiteConnection($"Data Source={static_path}; Mode=ReadOnly;");
         db.Authorize += Authorize;
+        db.Open();
     }
 
     void ExecuteNonQuery(string command)
@@ -198,9 +200,10 @@ class ManagedDisk : AbstractPeripheral
 
     async Task ExecuteQuery(SQLiteCommand cmd)
     {
-        var reader = await cmd.ExecuteReaderAsync();
-        res = (SQLiteDataReader) reader;
-        Computer.ExitIOWait();
+        Console.WriteLine("ReaderAsync");
+        var reader = cmd.ExecuteReader();
+        Console.WriteLine("GotReader");
+        res = reader;
     }
 
     int Select(lua_State L)
@@ -254,6 +257,7 @@ class ManagedDisk : AbstractPeripheral
     SQLiteDataReader? res;
     int Query(lua_State L)
     {
+        Console.WriteLine("Enter query");
         string cstr = luaL_checkstring(L, 2);
         var cmd = new SQLiteCommand(cstr, db);
         int expected_args = cstr.Where((c) => c == '?').Count();
@@ -289,13 +293,8 @@ class ManagedDisk : AbstractPeripheral
                 Value = null
             });
         }
-        _ = ExecuteQuery(cmd);
-        return Computer.EnterIOWait((L) =>
-        {
-            QueryReader.Push(L, res); // this will never be null
-            res = null;
-            return 1;
-        });
+        Console.WriteLine("Built query");
+        return QueryReader.Push(L, cmd.ExecuteReader());
     }
 
     public override void Destroy()
