@@ -4,8 +4,7 @@
         {
             "name": "C#: Launch Startup Project",
             "type": "dotnet",
-            "request": "launch",
-            "args": ["debugenablecontrolws"]
+            "request": "launch"
         }
     ]
 }

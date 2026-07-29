@@ -39,6 +39,7 @@ static class Helpers
             var box = lua_touserdata(L, 1);
             var ptr = (nint*)box;
             var hand = *ptr;
+            Console.WriteLine($"GC: {hand}");
             GCHandle.FromIntPtr(hand).Free();
         }
         return 0;

@@ -315,7 +315,9 @@ class Computer
             string err = lua_tostring(L, -1);
             LocalTTY?.Write("FAILED TO RESUME: "+err);
         }
+        DumpStack(L);
         lua_pop(L, remove);
+        DumpStack(L);
         // calculate our punishment (reaper thread cycles before we're allowed to resume)
         punishment = (int)Math.Floor((end_time-exec_deadline)/Config.ContextSwitchTime);
         Console.WriteLine("Punishment: "+punishment);

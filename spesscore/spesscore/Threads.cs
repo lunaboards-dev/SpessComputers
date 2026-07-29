@@ -8,6 +8,7 @@ class LuaExecutionManager
     public Dictionary<int, Computer?> Running = [];
 
     Thread IntThread;
+    Thread IOThread;
 
     static void Runner()
     {

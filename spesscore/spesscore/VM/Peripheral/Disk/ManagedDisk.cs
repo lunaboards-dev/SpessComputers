@@ -33,10 +33,11 @@ class ManagedDisk : AbstractPeripheral
 
     public ManagedDisk(uint refid, string static_path) : this()
     {
-        Console.WriteLine("OPEN:"+static_path);
+        string path = Path.Join(Environment.CurrentDirectory, static_path);
+        Console.WriteLine("OPEN:"+path);
         // do things
         read_only = true;
-        db = new SQLiteConnection($"Data Source={static_path}; Mode=ReadOnly;");
+        db = new SQLiteConnection($"Data Source={path}; Mode=ReadOnly;");
         db.Authorize += Authorize;
         db.Open();
     }

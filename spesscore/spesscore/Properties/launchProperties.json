@@ -1,0 +1,8 @@
+{
+    "profiles": {
+        "DebugWithArgs": {
+            "commandName": "spesscore",
+            "commandLineArgs": "debugenablecontrolws debugtestimage=lua/tests.db"
+        }
+    }
+}
