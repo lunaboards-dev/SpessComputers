@@ -17,13 +17,13 @@ class Event : IIPCSection
         string evname = br.ReadString();
         LuaValueList lvl = LuaValueList.Read(br);
         var p = SpessCore.Instance.GetPeripheral<IPeripheral>(id);
-        p?.Computer?.events.Put(new VM.LuaSignal()
+        /* p?.Computer?.events.Put(new VM.LuaSignal()
         {
             Name = evname,
             Sender = id,
             Values = lvl,
             Valid = true
-        });
+        }); */
         return true;
     }
 

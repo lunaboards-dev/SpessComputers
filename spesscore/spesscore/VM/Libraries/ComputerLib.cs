@@ -3,8 +3,9 @@ namespace spesscore.VM.Libraries;
 using static spesscore.VM.Lua;
 using static spesscore.VM.Helpers;
 using spesscore.VM.Peripheral;
+using System.Collections.Generic;
 
-class ComputerLib : Library
+/*class ComputerLib : Library
 {
     Computer c;
     Dictionary<string, lua_CFunction> funcs;
@@ -193,7 +194,7 @@ class ComputerLib : Library
             var val = sig?.Push(L);
             if (val != null)
                 res = val.Value;
-        } */
+        } * /
         Console.WriteLine("Yielded");
         return lua_yield(L, res); // i hope this doesn't explode
     }
@@ -221,4 +222,13 @@ class ComputerLib : Library
     {
         return lua_yield(L, 0);
     }
+} */
+
+class ComputerLib : Library
+{
+    public ComputerLib() : base("computer")
+    {
+    }
+
+    public override Dictionary<string, lua_CFunction> Functions => throw new NotImplementedException();
 }

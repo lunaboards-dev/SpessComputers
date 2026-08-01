@@ -138,7 +138,7 @@ class SpessCore
             // fuck
             return null;
         }
-        byte[] bios = new byte[str.Length];
+        /* byte[] bios = new byte[str.Length];
         str.Read(bios);
         Computer comp = new();
         EEPROM eeprom = new(0, bios);
@@ -156,8 +156,8 @@ class SpessCore
         comp.Disk = disk;
 
 
-        Computers.Add(comp);
-        return comp;
+        Computers.Add(comp); */
+        return null;
     }
 
     async Task AwaitShutdown()
@@ -184,8 +184,8 @@ class SpessCore
 
     public void PushSignal(LuaSignal signal)
     {
-        if (Peripherals.TryGetValue(signal.Sender, out IPeripheral? val))
-            val.Computer?.PushSignal(signal);
+        /* if (Peripherals.TryGetValue(signal.Sender, out IPeripheral? val))
+            val.Computer?.PushSignal(signal); */
     }
 
     public void Bwoink(string msg)

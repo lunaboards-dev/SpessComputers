@@ -63,14 +63,14 @@ class ManagedDisk : AbstractPeripheral
     {
         args.ReturnCode = SQLiteProgressReturnCode.Interrupt;
         if (Computer != null) {
-            Computer.PushSignal(new ()
+            /* Computer.PushSignal(new ()
             {
                 Name = "io_fail",
                 Sender = ID,
                 Valid = true,
                 Values = new("timeout")
             });
-            Computer.ExitIOWait();
+            Computer.ExitIOWait(); */
         }
     }
 

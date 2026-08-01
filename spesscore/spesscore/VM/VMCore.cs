@@ -2,23 +2,32 @@
 using spesscore.VM.Libraries;
 using static spesscore.VM.Lua;
 using static spesscore.VM.Helpers;
+using System.Runtime.InteropServices;
 
 namespace spesscore.VM;
 
-class VMCore
+class VMCore(byte[] startup)
 {
+    // main lock
+    Lock Lock = new();
+    List<Library> Libs = [];
+    bool LuaInit = false;
     lua_State L;
     lua_State TL;
 
     Lock LuaLock = new(); // required for accessing either L or TL.
 
-    double ExecSoftDeadline;
-    double ExecHardDeadline;
-    double ResumeDeadline;
+    public double ExecSoftDeadline;
+    public double ExecHardDeadline;
+    public double ResumeDeadline;
     int Punishment = 0;
+    public int Punish => Punishment;
     Lock TimingLock = new();
-
     int State = 0;
+    byte[] StartupCode = startup;
+
+    public event Action<string> OnError;
+    public event Action OnWatchdog;
 
     void UpdateDeadlines()
     {
@@ -30,7 +39,7 @@ class VMCore
         }
     }
 
-    void DecPunish()
+    public void DecPunish()
     {
         Interlocked.Decrement(ref Punishment);
     }
@@ -45,29 +54,97 @@ class VMCore
     }
 
     // used externally, forces a preempt yield.
-    void Pause()
+    public void Pause()
     {
         
     }
 
     // used internally, forces a generic yield.
-    int Yield(lua_State L)
+    public int Yield(lua_State L)
     {
         return lua_yield(L, 0);
     }
 
-    bool Resume()
+    public bool Resume(bool IgnoreDeadline=false)
     {
-        return false;
+        UpdateDeadlines();
+        int count = 0;
+        int status = lua_resume(L, 0, 0, ref count);
+        double end_time = Times.CurTime;
+        if (end_time >= ExecHardDeadline && !IgnoreDeadline)
+        {
+            OnWatchdog?.Invoke();
+            Console.WriteLine("Watchdog triggered");
+            return true; // NOT INTO THE PIT, IT BURNS
+        }
+        bool dead = status != LUA_YIELD;
+        if (dead && status != LUA_OK)
+        {
+            string err = lua_tostring(L, -1);
+            OnError?.Invoke(err);
+        }
+        lua_pop(L, count);
+        Punishment = (int)Math.Floor((end_time-ExecHardDeadline)/Config.ContextSwitchTime);
+        return dead;
     }
 
-    void Start()
+    nint CurrentAlloc = 0;
+    public nint MaxMemory = 0;
+    unsafe nuint Allocator(lua_State ud, nuint ptr, ulong osize, ulong nsize)
     {
-        
+        nint delta = ((int)nsize)-((int)osize);
+        if (delta+CurrentAlloc > MaxMemory)
+        {
+            Console.WriteLine("OOM");
+            return 0; // wrong, chlorine trifluoride
+        }
+        void* p = NativeMemory.Realloc((void*)ptr, (nuint)nsize);
+        CurrentAlloc+=(int)delta;
+        return (nuint)p;
+    }
+    lua_Alloc AllocatorDel;
+
+    void InitLuaState()
+    {
+        lock(LuaLock) {
+            if (LuaInit)
+            {
+                lua_close(L);
+            }
+            LuaInit = true;
+            AllocatorDel = Allocator;
+            L = lua_newstate(AllocatorDel, 0);
+            luaL_openlibs(L);
+            foreach (var lib in Libs)
+            {
+                lib.Push(L);
+            }
+            luaL_loadbufferx(L, StartupCode, (uint)StartupCode.Length, "=machine.lua", "t");
+            if (lua_type(L, -1) != LUA_TFUNCTION)
+            {
+                throw new Exception("Failed to load machine.lua: "+lua_tostring(L, -1));
+            }
+        }
     }
 
-    void AddLibrary(Library lib)
+    public bool TryEnter()
     {
-        lib.Push(L);
+        return Lock.TryEnter();
+    }
+
+    public void Exit()
+    {
+        Lock.Exit();
+    }
+
+    public void Start()
+    {
+        InitLuaState();
+        Resume(true);
+    }
+
+    public void AddLibrary(Library lib)
+    {
+        Libs.Add(lib);
     }
 }

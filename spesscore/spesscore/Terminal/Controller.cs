@@ -22,8 +22,8 @@ class Controller
                 if (comp != null)
                     comp.Stop();
                 comp = c;
-                string rtext = JsonConvert.SerializeObject(new {command="new_computer", id=c.GetPeripherals("tty").First().ID});
-                SpessCore.Instance?.TServ.Server.SendAsync(gid, Encoding.UTF8.GetBytes(rtext));
+                /* string rtext = JsonConvert.SerializeObject(new {command="new_computer", id=c.GetPeripherals("tty").First().ID});
+                SpessCore.Instance?.TServ.Server.SendAsync(gid, Encoding.UTF8.GetBytes(rtext)); */
             }
         } catch (Exception e)
         {

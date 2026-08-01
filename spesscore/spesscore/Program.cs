@@ -1,6 +1,8 @@
 ﻿// See https://aka.ms/new-console-template for more information
 // simple arg parsing
+using System.Text;
 using spesscore;
+using spesscore.VM;
 
 List<string> flags = [];
 Dictionary<string, string> nargs = [];

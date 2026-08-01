@@ -18,12 +18,12 @@ class LuaExecutionManager
             if (SpessCore.Instance != null && SpessCore.Instance.Computers.Count > 0) {
                 if (i >= SpessCore.Instance.Computers.Count) i = 0;
                 var comp = SpessCore.Instance.Computers[i];
-                if (comp != null && comp.punishment <= 0 && comp.Lock != null && comp.Lock.TryEnter()) {
-                    if (comp.Deadline <= Times.CurTime)
+                if (comp != null && comp.VM.Punish <= 0 && comp.VM.TryEnter()) {
+                    if (comp.VM.ResumeDeadline <= Times.CurTime)
                     {
                         comp.TryResume();
                     }
-                    comp.Lock.Exit();
+                    comp.VM.Exit();
                 }
                 i++;
             } else
@@ -42,10 +42,10 @@ class LuaExecutionManager
                 var comp = pair.Value;
                 if (comp != null)
                 {
-                    lock(comp.pauselock) {
-                        if (Times.CurTime >= comp.exec_deadline)
+                    lock(comp.VM) {
+                        if (Times.CurTime >= comp.VM.ExecSoftDeadline)
                         {
-                            comp.Pause();
+                            comp.VM.Pause();
                             SpessCore.Instance.Manager.Running[pair.Key] = null;
                             break;
                         }
@@ -54,7 +54,7 @@ class LuaExecutionManager
             }
             foreach (var vm in SpessCore.Instance.Computers)
             {
-                vm.punishment--;
+                vm.VM.DecPunish();
             }
             Thread.Sleep(5); // this is the worst
         }
