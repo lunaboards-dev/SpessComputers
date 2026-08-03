@@ -631,6 +631,17 @@ do
 	string.gsub = str_gsub
 end
 
+function peripheral.proxy(id)
+	local meths = peripheral.methods(id)
+	local t = {id=id}
+	for i=1, #meths do
+		t[meths[i]] = function(self, ...)
+			return peripheral.call(id, meths[i], ...)
+		end
+	end
+	return t
+end
+
 local preempt = computer.preempt
 local set_thd = computer.set_current_thread
 local thd_resume = computer.thd_resume
@@ -696,42 +707,63 @@ debug = {
 	traceback = debug.traceback
 }
 
+local function tty_write(str)
+	peripheral.call(computer.tty(), "write", str)
+end
+
+local function tty_writeln(str)
+	tty_write(str.."\r\n")
+end
+
+local _xpcall = xpcall
+function ypcall(f, errh, ...)
+	local xerr, xdtb
+	local res = table.pack(_xpcall(f, function(err)
+		xerr = err
+		xdtb = debug.traceback(err)
+	end, ...))
+	if not res[1] then
+		errh(xerr, xdtb)
+	end
+	return table.unpack(res)
+end
+xpcall = nil
+
 local rare_fox = computer.rare_fox
 computer.rare_fox = nil
 
 local mcr = coro.create(function()
-	xpcall(function()
+	ypcall(function()
 		print("yerp")
-		local tty = computer.tty()
 		--computer.set_mem_baseline()
 		computer.set_mem_baseline = nil
-		computer.dump_stack()
-		tty:write("yerp2")
-		local bios = load(computer.eeprom():code(), "=bios.lua")
+		--computer.dump_stack()
+		tty_write("yerp2")
+		local bios = load(peripheral.call(computer.eeprom(), "code"), "=bios.lua")
 		print("yerp 2")
 		computer.pull_signal()
 		bios()
 		error("halted")
-	end, function(err)
+	end, function(err, trace)
 		-- print to vt
 		local tty = computer.tty()
-		print(debug.traceback(err))
-		_exit(1)
+		print(trace)
+		--_exit(1)
 		if tty then
-			print(debug.traceback(err))
-			tty:write(debug.traceback(err):gsub("\n","\r\n"))
-			tty:write("\r\n")
-			tty:write("\27[2;60H")
-			tty:write(rare_fox())
-			tty:write("\27[;60H Crashes are rare")
-			tty:write("\27[9;60H  As is this fox")
+			--print(debug.traceback(err))
+			tty_writeln(trace:gsub("\n","\r\n"))
+			tty_writeln("\r\n")
+			tty_write("\27[2;60H")
+			tty_writeln(rare_fox())
+			tty_writeln("\27[;60H Crashes are rare")
+			tty_writeln("\27[9;60H  As is this fox")
 		end
 	end)
 end)
 
-computer.dump_stack()
+--computer.dump_stack()
 
-computer.tty():write("terp")
+tty_write("terp")
 
 print("resuming 1")
 thd_resume(mcr)

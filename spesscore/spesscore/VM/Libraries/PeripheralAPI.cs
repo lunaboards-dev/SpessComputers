@@ -95,4 +95,10 @@ class PeripheralAPI : Library
         lua_pushcclosure(L, ListCallDel, 2);
         return 1;
     }
+
+    public override void Push(lua_State L)
+    {
+        base.Push(L);
+        QueryReader.InitLib(L);
+    }
 }

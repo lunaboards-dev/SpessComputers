@@ -10,7 +10,11 @@ class MetatableBuilder : TableBuilder
 
     public override void CreateTable()
     {
-        Lua.luaL_newmetatable(L, name);
+        Console.WriteLine($"Create metatable {name}");
+        if (Lua.luaL_newmetatable(L, name) == 0)
+        {
+            throw new Exception($"Metatable {name} already exists!");
+        }
     }
 
     public override void FinishTable()

@@ -7,8 +7,8 @@ namespace spesscore.VM;
 class Computer
 {
     public VMCore VM;
-    public TTY? LocalTerminal;
-    public List<IPeripheral> Peripherals;
+    public TTY? LocalTerminal => LocalTTY;
+    public List<IPeripheral> Peripherals = [];
 
     public TTY? LocalTTY;
     public ManagedDisk? Disk;
@@ -30,6 +30,7 @@ class Computer
     public void AddPeripheral(IPeripheral per)
     {
         Peripherals.Add(per);
+        per.Attach(this);
     }
 
     public IPeripheral? GetPeripheral(string id)
@@ -48,11 +49,20 @@ class Computer
 
     public void TogglePower(bool hard)
     {
-        
+        if (VM.Active)
+        {
+            if (hard)
+            {
+                VM.Stop();
+            }
+        } else
+        {
+            VM.Start();
+        }
     }
 
     public bool TryResume()
     {
-        return true;
+        return VM.Resume();
     }
 }

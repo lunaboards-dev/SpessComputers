@@ -107,10 +107,10 @@ class TerminalServer
                     {
                         var _pwrcmd = new {command="", hard=false};
                         var pwr = JsonConvert.DeserializeAnonymousType(jstr, _pwrcmd);
-                        var term = SpessCore.Instance?.GetPeripheral<TTY>(Listener.ID);
+                        var term = SpessCore.Instance.GetPeripheral<TTY>(Listener.ID);
                         if (term == null || term.Computer == null || term.Computer.LocalTerminal == null)
                         {
-                            Console.WriteLine($"Something is null! {term} {term?.Computer} {term?.Computer?.LocalTerminal}");
+                            Console.WriteLine($"Something is null! [{term}] [{term?.Computer}] [{term?.Computer?.LocalTerminal}]");
                         }
                         if (term?.Computer?.LocalTerminal != term)
                         {

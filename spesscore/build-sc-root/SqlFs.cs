@@ -131,9 +131,10 @@ class SqlFs
         query.Parameters["@inode"].Value = inode;
         using var fs = File.OpenRead(path);
         int id = 0;
-        byte[] buffer = new byte[512];
         while (fz > 0)
         {
+            Console.WriteLine(fz);
+            byte[] buffer = new byte[512];
             fz -= fs.Read(buffer, 0, 512);
             query.Parameters["@blkid"].Value = id++;
             query.Parameters["@data"].Value = buffer;

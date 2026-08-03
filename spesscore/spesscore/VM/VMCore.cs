@@ -3,10 +3,11 @@ using spesscore.VM.Libraries;
 using static spesscore.VM.Lua;
 using static spesscore.VM.Helpers;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace spesscore.VM;
 
-class VMCore(byte[] startup)
+class VMCore
 {
     // main lock
     public Lock Lock = new();
@@ -24,18 +25,52 @@ class VMCore(byte[] startup)
     public int Punish => Punishment;
     public Lock TimingLock = new();
     int State = 0;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     bool StateTest(VMState s)
     {
         int t = (int)s;
         Interlocked.And(ref t, State);
         return t > 0;
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    void StateClear(VMState s)
+    {
+        int t = 0xFF ^ (int)s;
+        Interlocked.And(ref State, t);
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    void StateSet(VMState s)
+    {
+        int t = (int)s;
+        Interlocked.Or(ref State, t);
+    }
+
+    public bool Active => StateTest(VMState.Active);
     public bool Paused => StateTest(VMState.Paused);
     public bool IOWait => StateTest(VMState.IOWait);
-    byte[] StartupCode = startup;
+    public bool Running => StateTest(VMState.Running);
+
+    byte[] StartupCode;
 
     public event Action<string> OnError;
     public event Action OnWatchdog;
+
+    public VMCore(byte[] startup)
+    {
+        StartupCode = startup;
+        PauseExecDel = PauseExecution;
+    }
+
+    lua_Hook PauseExecDel;
+    void PauseExecution(lua_State L, lua_Debug ar)
+    {
+        //Console.WriteLine("STOP EXEC");
+        //Console.WriteLine($"Paused in {ar.currentline}");
+        Yield(L);
+        lua_sethook(L, null, 0, 0);
+        StateClear(VMState.Running);
+        //DumpStack(L);
+    }
 
     void UpdateDeadlines()
     {
@@ -60,7 +95,11 @@ class VMCore(byte[] startup)
     // used externally, forces a preempt yield.
     public void Pause()
     {
-        
+        if (StateTest(VMState.Active) && !Paused)
+        {
+            StateSet(VMState.Paused);
+            lock(LuaLock) lua_sethook(TL, PauseExecDel, LUA_MASKCOUNT, 0);
+        }
     }
 
     // used internally, forces a generic yield.
@@ -71,7 +110,10 @@ class VMCore(byte[] startup)
 
     public bool Resume(bool IgnoreDeadline=false)
     {
+        //Console.WriteLine("RESUME");
+        StateSet(VMState.Running);
         UpdateDeadlines();
+        StateClear(VMState.Paused | VMState.IOWait);
         int count = 0;
         int status = lua_resume(L, 0, 0, ref count);
         double end_time = Times.CurTime;
@@ -82,6 +124,10 @@ class VMCore(byte[] startup)
             return true; // NOT INTO THE PIT, IT BURNS
         }
         bool dead = status != LUA_YIELD;
+        if (dead)
+        {
+            StateClear(VMState.Active);
+        }
         if (dead && status != LUA_OK)
         {
             string err = lua_tostring(L, -1);
@@ -89,6 +135,7 @@ class VMCore(byte[] startup)
         }
         lua_pop(L, count);
         Punishment = (int)Math.Floor((end_time-ExecHardDeadline)/Config.ContextSwitchTime);
+        StateClear(VMState.Running);
         return dead;
     }
 
@@ -134,6 +181,7 @@ class VMCore(byte[] startup)
 
     public bool TryEnter()
     {
+        if (!Active || Paused || IOWait || Running) return false;
         return Lock.TryEnter();
     }
 
@@ -145,11 +193,27 @@ class VMCore(byte[] startup)
     public void Start()
     {
         InitLuaState();
-        Resume(true);
+        StateSet(VMState.Active);
     }
 
     public void AddLibrary(Library lib)
     {
         Libs.Add(lib);
+    }
+
+    internal void Stop()
+    {
+        Pause();
+        StateClear(VMState.Active);
+    }
+
+    public bool TryResume()
+    {
+        if (!Resume())
+        {
+            StateClear(VMState.Active);
+            return false;
+        }
+        return true;
     }
 }

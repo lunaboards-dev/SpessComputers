@@ -15,7 +15,7 @@ static class QueryReader
 
     public static void InitLib(lua_State L)
     {
-        var mt = new MetatableBuilder(L, "SqlQueryReader");
+        var mt = new TableBuilder(L, "SqlQueryReader");
         var it = mt.SetTable("__index");
         it.SetFunction("empty", EmptyDel);
         it.SetFunction("read", ReadDel);
@@ -23,8 +23,8 @@ static class QueryReader
         it.SetFunction("next", NextDel);
         it.SetFunction("values", ValuesDel);
         it.Close();
-        it.SetFunction("__gc", ReleaseObjectDelegate);
-        it.Close();
+        mt.SetFunction("__gc", ReleaseObjectDelegate);
+        mt.Close();
     }
 
     static lua_CFunction EmptyDel = Empty;
@@ -62,10 +62,7 @@ static class QueryReader
                 break;
             case TypeAffinity.Blob:
             case TypeAffinity.None:
-                var str = reader.GetBlob(i, true);
-                var bz = str.GetCount();
-                var buf = new byte[bz];
-                str.Read(buf, bz, 0);
+                byte[] buf = (byte[])reader[i];
                 lua_pushbytebuffer(L, buf);
                 break;
             default:
@@ -79,8 +76,9 @@ static class QueryReader
         var reader = lua_ToObject<SQLiteDataReader>(L, d_idx);
         if (reader == null) return luaL_error(L, "internal error: SQLiteDataReader is null");
         if (!reader.Read()) return 0;
-        if (lua_type(L, t_idx) == LUA_TTABLE) lua_pushvalue(L, 2);
-        else lua_newtable(L);
+        /* if (lua_type(L, t_idx) == LUA_TTABLE) lua_pushvalue(L, 2);
+        else lua_newtable(L); */
+        lua_newtable(L);
         for (int i=0; i<reader.FieldCount; ++i)
         {
             lua_pushstring(L, reader.GetName(i));

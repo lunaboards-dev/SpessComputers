@@ -2,6 +2,7 @@
 using System.Data.SQLite;
 using static spesscore.VM.Lua;
 using static spesscore.VM.Helpers;
+using System.Data;
 
 namespace spesscore.VM.Peripheral.Disk;
 
@@ -258,17 +259,16 @@ class ManagedDisk : AbstractPeripheral
     SQLiteDataReader? res;
     int Query(lua_State L)
     {
-        Console.WriteLine("Enter query");
         string cstr = luaL_checkstring(L, 2);
         var cmd = new SQLiteCommand(cstr, db);
         int expected_args = cstr.Where((c) => c == '?').Count();
-        for (int i=3;i<lua_gettop(L); ++i)
+        for (int i=3;i<=lua_gettop(L); ++i)
         {
             SQLiteParameter param = new();
             switch (lua_type(L, i))
             {
                 case LUA_TSTRING:
-                    param.Value = lua_tobytebuffer(L, i);
+                    param.Value = lua_tostring(L, i);
                     break;
                 case LUA_TBOOLEAN:
                     param.Value = lua_toboolean(L, i);
@@ -294,8 +294,14 @@ class ManagedDisk : AbstractPeripheral
                 Value = null
             });
         }
-        Console.WriteLine("Built query");
-        return QueryReader.Push(L, cmd.ExecuteReader());
+        try {
+            cmd.Prepare();
+            var rdr = cmd.ExecuteReader();
+            return QueryReader.Push(L, rdr);
+        } catch (Exception e)
+        {
+            return luaL_error(L, e.Message);
+        }
     }
 
     public override void Destroy()

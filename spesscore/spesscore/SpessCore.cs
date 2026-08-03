@@ -138,26 +138,29 @@ class SpessCore
             // fuck
             return null;
         }
-        /* byte[] bios = new byte[str.Length];
+        byte[] bios = new byte[str.Length];
         str.Read(bios);
+
         Computer comp = new();
+        comp.VM.MaxMemory = 1024*1024;
+
         EEPROM eeprom = new(0, bios);
         AddPeripheral(eeprom);
         comp.AddPeripheral(eeprom);
-        comp.eeprom = eeprom;
+        comp.BIOS = eeprom;
+
         TTY tty = new(0);
         AddPeripheral(tty);
         comp.AddPeripheral(tty);
-        comp.SetLocalTTY(tty.ID);
+        comp.LocalTTY = tty;
 
         ManagedDisk disk = new(0, Config.DebugTestImage);
         AddPeripheral(disk);
         comp.AddPeripheral(disk);
         comp.Disk = disk;
 
-
-        Computers.Add(comp); */
-        return null;
+        Computers.Add(comp);
+        return comp;
     }
 
     async Task AwaitShutdown()

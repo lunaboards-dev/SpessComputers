@@ -23,6 +23,7 @@ class TableBuilder
     int length = 0;
     bool waiting_table;
     bool complete;
+    bool ismt = false;
     
     bool InsertValid => !(waiting_table || complete);
     public TableBuilder(lua_State L)
@@ -30,6 +31,14 @@ class TableBuilder
         this.L = L;
         CreateTable();
     }
+
+    public TableBuilder(lua_State L, string mtname)
+    {
+        this.L = L;
+        ismt = true;
+        luaL_newmetatable(L, mtname);
+    }
+
     public virtual void CreateTable()
     {
         lua_newtable(L);
@@ -37,7 +46,10 @@ class TableBuilder
 
     public virtual void FinishTable()
     {
-        // nothing
+        if (ismt)
+        {
+            lua_pop(L, 1);
+        }
     }
 
     public void SetString(string key, string value)
@@ -75,6 +87,7 @@ class TableBuilder
     public void SetFunction(string key, lua_CFunction func)
     {
         if (!InsertValid) throw new Exception("can't write to this table right now");
+        Console.WriteLine($"DEBUG: tblset {key} = {func}");
         lua_pushstring(L, key);
         lua_pushcfunction(L, func);
         lua_settable(L, -3);
@@ -85,6 +98,7 @@ class TableBuilder
         if (!InsertValid) throw new Exception("can't write to this table right now");
         lua_pushstring(L, key);
         waiting_table = true;
+        Console.WriteLine($"DEBUG: tblset {key} = [tbl]");
         return new SubTableBuilder(L, this);
     }
 
