@@ -98,13 +98,17 @@ class VMCore
         if (StateTest(VMState.Active) && !Paused)
         {
             StateSet(VMState.Paused);
-            lock(LuaLock) lua_sethook(TL, PauseExecDel, LUA_MASKCOUNT, 0);
+            lock(LuaLock) lua_sethook(TL, PauseExecDel, LUA_MASKCOUNT, 1);
         }
     }
 
     // used internally, forces a generic yield.
-    public int Yield(lua_State L)
+    public int Yield(lua_State L, bool as_preempt=false)
     {
+        if (as_preempt)
+        {
+            StateSet(VMState.Paused);
+        }
         return lua_yield(L, 0);
     }
 
@@ -181,7 +185,7 @@ class VMCore
 
     public bool TryEnter()
     {
-        if (!Active || Paused || IOWait || Running) return false;
+        if (!Active || IOWait || Running) return false;
         return Lock.TryEnter();
     }
 

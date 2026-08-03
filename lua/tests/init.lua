@@ -47,11 +47,18 @@ function dir(path)
     return bdev:query("select name from fmeta where parent = ? order by name asc;", res.inode):values()
 end
 
-print("SpessComputers test suite")
+log = dofile("lib/log.lua")
+
+function test_fail(msg)
+    log.error(msg)
+    error("Test failed!")
+end
+
+print("SpessComputers test suite v0.1.0")
 
 for test in assert(dir("tests")) do
-    print(":: Running "..test)
+    print("\27[1m:: Running "..test.."\27[0m")
     dofile("tests/"..test)
 end
 
-print("Tests passed!")
+log.ok("Tests passed!")

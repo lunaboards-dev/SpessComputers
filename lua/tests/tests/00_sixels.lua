@@ -10,3 +10,13 @@ sixwrap [[
 ]]
 
 print("\r\n^ Should say 'hi'")
+print("Does it? [y/n]")
+while true do
+    local c = peripheral.call(computer.tty(), "next")
+    if c == "y" then
+        log.ok("Pass!")
+        break
+    elseif c == "n" then
+        test_fail "boowomp"
+    end
+end

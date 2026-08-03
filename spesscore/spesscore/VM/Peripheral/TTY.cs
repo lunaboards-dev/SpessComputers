@@ -63,7 +63,7 @@ class TTY : AbstractPeripheral
         byte[] str = luaL_checkbytebuffer(L, 2);
         if (str.Length == 0) return 0;
         listener?.Write(str);
-        return Computer.VM.Yield(L);
+        return Computer.VM.Yield(L, true);
     }
 
     int BufferSize(lua_State L)

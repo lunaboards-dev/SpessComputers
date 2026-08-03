@@ -21,6 +21,7 @@ class LuaExecutionManager
                 if (comp != null && comp.VM.Punish <= 0 && comp.VM.TryEnter()) {
                     if (comp.VM.ResumeDeadline <= Times.CurTime)
                     {
+                        SpessCore.Instance.Manager.Running[Environment.CurrentManagedThreadId] = comp;
                         comp.TryResume();
                     }
                     comp.VM.Exit();
@@ -42,13 +43,11 @@ class LuaExecutionManager
                 var comp = pair.Value;
                 if (comp != null)
                 {
-                    lock(comp.VM) {
-                        if (Times.CurTime >= comp.VM.ExecSoftDeadline)
-                        {
-                            comp.VM.Pause();
-                            SpessCore.Instance.Manager.Running[pair.Key] = null;
-                            break;
-                        }
+                    if (Times.CurTime >= comp.VM.ExecSoftDeadline)
+                    {
+                        comp.VM.Pause();
+                        SpessCore.Instance.Manager.Running[pair.Key] = null;
+                        break;
                     }
                 }
             }
@@ -56,8 +55,9 @@ class LuaExecutionManager
             {
                 vm.VM.DecPunish();
             }
-            Thread.Sleep(5); // this is the worst
+            Thread.Sleep(1); // this is the worst
         }
+        Console.WriteLine("DEAD!");
     }
 
     void AddThread()
@@ -76,9 +76,11 @@ class LuaExecutionManager
         {
             AddThread();
         }
-        IntThread = new Thread(Inter);
-        IntThread.IsBackground = true;
-        IntThread.Name = "Yerp 9001";
+        IntThread = new Thread(Inter)
+        {
+            IsBackground = true,
+            Name = "Yerp 9001"
+        };
     }
 
     public void Start()
