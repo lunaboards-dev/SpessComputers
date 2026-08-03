@@ -3,7 +3,7 @@ namespace spesscore.VM.Peripheral;
 
 class DMPeripheral : IPeripheral
 {
-    public Dictionary<string, IPeripheral.PeripheralCallback> Callbacks => throw new NotImplementedException();
+    public Dictionary<string, Lua.lua_CFunction> Callbacks => throw new NotImplementedException();
 
     public string PeripheralName => throw new NotImplementedException();
 

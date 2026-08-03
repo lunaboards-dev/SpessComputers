@@ -9,7 +9,7 @@ namespace spesscore.VM.Peripheral;
 
 class TTY : AbstractPeripheral
 {
-    override public Dictionary<string, IPeripheral.PeripheralCallback> Callbacks => callbacks;
+    override public Dictionary<string, lua_CFunction> Callbacks => callbacks;
     CircularBuffer<byte> buffer = new(1024, true); // if you don't process 1KiB of inputs in time, that's on you.
     TerminalListener? listener;
     uint href;
@@ -19,7 +19,7 @@ class TTY : AbstractPeripheral
         return href;
     }
 
-    Dictionary<string, IPeripheral.PeripheralCallback> callbacks;
+    Dictionary<string, lua_CFunction> callbacks;
     public TTY(uint holder) : base("tty")
     {
         callbacks = new()

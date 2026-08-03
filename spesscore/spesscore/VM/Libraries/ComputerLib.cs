@@ -5,7 +5,7 @@ using static spesscore.VM.Helpers;
 using spesscore.VM.Peripheral;
 using System.Collections.Generic;
 
-/*class ComputerLib : Library
+class ComputerLib : Library
 {
     Computer c;
     Dictionary<string, lua_CFunction> funcs;
@@ -14,8 +14,8 @@ using System.Collections.Generic;
         c = comp;
         funcs = new()
         {
-            {"peripheral", PeripheralById},
-            {"peripherals", PeripheralList},
+            /* {"peripheral", PeripheralById},
+            {"peripherals", PeripheralList}, */
             {"eeprom", GetEEPROM},
             {"tty", GetTTY},
             {"disk", GetDisk},
@@ -29,14 +29,14 @@ using System.Collections.Generic;
             {"thd_resume", ThdResume},
             {"int_yield", OnlyYield},
             {"is_iores", IsIoresume},
-            {"dump_stack", Computer.DumpStackL}
+            //{"dump_stack", Computer.DumpStackL}
         };
     }
 
     public override Dictionary<string, lua_CFunction> Functions => funcs;
 
     //static lua_CFunction PerByIdDel = PeripheralById;
-    int PeripheralById(lua_State L)
+    /* int PeripheralById(lua_State L)
     {
         //Computer? c = lua_ToObject<Computer>(L, 1);
         string? id = luaL_checkstring(L, 1);
@@ -46,9 +46,9 @@ using System.Collections.Generic;
             return 0;
         c.PushPeripheral(L, perf);
         return 1;
-    }
+    } */
 
-    static lua_CFunction PIterDel = PeripheralIter;
+    /* static lua_CFunction PIterDel = PeripheralIter;
     static int PeripheralIter(lua_State L)
     {
         //Lua L = Lua.FromIntPtr(ptr);
@@ -65,10 +65,10 @@ using System.Collections.Generic;
         lua_pushstring(L, p.ID);//L.PushString(p.ID);
         lua_pushstring(L, p.PeripheralName);//L.PushString(p.PeripheralName);
         return 2;
-    }
+    } */
 
     //static lua_CFunction PerListDel = PeripheralList;
-    int PeripheralList(lua_State L)
+    /* int PeripheralList(lua_State L)
     {
         //Computer c = lua_ToObject<Computer>(L, 1);//L.ToObject<Computer>(1, false);
         if (lua_isnil(L, 1))
@@ -87,14 +87,14 @@ using System.Collections.Generic;
             lua_pushcclosure(L, PIterDel, 2);//L.PushCClosure(PIterDel, 2);
             return 1;
         }
-    }
+    } */
 
     //static lua_CFunction GetROMDel = GetEEPROM;
     int GetEEPROM(lua_State L)
     {
         //Computer c = lua_ToObject<Computer>(L, 1);//L.ToObject<Computer>(1, false);
-        if (c.eeprom == null) return 0;
-        c.PushPeripheral(L, c.eeprom);
+        if (c.BIOS == null) return 0;
+        lua_pushstring(L, c.BIOS.ID);
         return 1;
     }
 
@@ -110,7 +110,7 @@ using System.Collections.Generic;
             return 0;
         }
         if (c.LocalTTY == null) return 0;
-        c.PushPeripheral(L, c.LocalTTY);
+        lua_pushstring(L, c.LocalTTY.ID);
         Console.WriteLine("GetTTY (end)");
         return 1;
     }
@@ -120,7 +120,7 @@ using System.Collections.Generic;
     {
         //Computer c = lua_ToObject<Computer>(L, 1);//Computer c = L.ToObject<Computer>(1, false);
         if (c.Disk == null) return 0;
-        c.PushPeripheral(L, c.Disk);
+        lua_pushstring(L, c.Disk.ID);
         return 1;
     }
 
@@ -128,7 +128,7 @@ using System.Collections.Generic;
     int GetMemory(lua_State L)
     {
         //Computer c = lua_ToObject<Computer>(L, 1);
-        lua_pushinteger(L, c.max_memory);
+        lua_pushinteger(L, c.VM.MaxMemory);
         return 1;
     }
 
@@ -136,7 +136,7 @@ using System.Collections.Generic;
     int GetUsedMemory(lua_State L)
     {
         //Computer c = lua_ToObject<Computer>(L, 1);
-        lua_pushinteger(L, c.currently_allocated);
+        lua_pushinteger(L, c.VM.CurrentAlloc);
         return 1;
     }
 
@@ -144,22 +144,14 @@ using System.Collections.Generic;
     int IsPreempted(lua_State L)
     {
         //Computer c = lua_ToObject<Computer>(L, 1);
-        lua_pushboolean(L, c.paused ? 1 : 0);
+        lua_pushboolean(L, c.VM.Paused ? 1 : 0);
         return 1;
     }
 
     int IsIoresume(lua_State L)
     {
-        lua_pushboolean(L, c.iores ? 1 : 0);
-        return 1;
-    }
-
-    //static lua_CFunction SetThdDel = SetThread;
-    int SetThread(lua_State L)
-    {
-        //Computer c = lua_ToObject<Computer>(L, 1);
-        int main = lua_pushthread(L);
-        lock(c.PLL) c.PL = lua_tothread(L, -1);
+        lua_pushboolean(L, 0);
+        //lua_pushboolean(L, c.iores ? 1 : 0);
         return 1;
     }
 
@@ -174,7 +166,7 @@ using System.Collections.Generic;
     int SetMemoryBaseline(lua_State L)
     {
         //Computer c = lua_ToObject<Computer>(L, 1);
-        c.currently_allocated = 0;
+        c.VM.CurrentAlloc = 0;
         return 0;
     } // DO NOT EXPOSE THIS
 
@@ -185,7 +177,7 @@ using System.Collections.Generic;
         if (lua_type(L, 1) == LUA_TNUMBER)
         {
             double dl = lua_tonumber(L, 1);
-            c.Deadline = Times.CurTime + dl;
+            c.VM.ResumeDeadline = Times.CurTime + dl;
         }
         int res = 0;
         /* if (c.SignalCount > 0)
@@ -194,7 +186,7 @@ using System.Collections.Generic;
             var val = sig?.Push(L);
             if (val != null)
                 res = val.Value;
-        } * /
+        } */
         Console.WriteLine("Yielded");
         return lua_yield(L, res); // i hope this doesn't explode
     }
@@ -212,9 +204,9 @@ using System.Collections.Generic;
         int args = lua_gettop(L);
         Console.WriteLine($"Resuming thread {S}");
         int nargs = 0;
-        lock(c.PLL) c.PL = S;
+        lock(c.VM.LuaLock) c.VM.TL = S;
         lua_resume(S, L, args-1, ref nargs);
-        lock(c.PLL) c.PL = L;
+        lock(c.VM.LuaLock) c.VM.TL = L;
         return nargs;
     }
 
@@ -222,13 +214,4 @@ using System.Collections.Generic;
     {
         return lua_yield(L, 0);
     }
-} */
-
-class ComputerLib : Library
-{
-    public ComputerLib() : base("computer")
-    {
-    }
-
-    public override Dictionary<string, lua_CFunction> Functions => throw new NotImplementedException();
 }

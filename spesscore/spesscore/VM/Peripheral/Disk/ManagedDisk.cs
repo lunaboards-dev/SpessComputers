@@ -14,9 +14,9 @@ class ManagedDisk : AbstractPeripheral
     //bool paused = false;
     public bool IsValid => Computer != null;
 
-    public override Dictionary<string, IPeripheral.PeripheralCallback> Callbacks => methods;
+    public override Dictionary<string, lua_CFunction> Callbacks => methods;
 
-    Dictionary<string, IPeripheral.PeripheralCallback> methods;
+    Dictionary<string, lua_CFunction> methods;
 
     ManagedDisk() : base("disk")
     {

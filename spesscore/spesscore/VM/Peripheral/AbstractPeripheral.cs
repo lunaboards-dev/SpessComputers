@@ -54,7 +54,7 @@ abstract class AbstractPeripheral(string name) : IPeripheral
 
     public Computer? Computer => Host;
 
-    public abstract Dictionary<string, IPeripheral.PeripheralCallback> Callbacks { get; }
+    public abstract Dictionary<string, Lua.lua_CFunction> Callbacks { get; }
 
     public uint Reference => GetRef();
 

@@ -9,7 +9,7 @@ class EEPROM : AbstractPeripheral
     byte[] code;
     Dictionary<string,byte[]> config = [];
     int config_size = 0;
-    Dictionary<string, IPeripheral.PeripheralCallback> callbacks;
+    Dictionary<string, lua_CFunction> callbacks;
     uint _ref;
 
     public override uint GetRef()
@@ -48,7 +48,7 @@ class EEPROM : AbstractPeripheral
         code = bytes;
     }
 
-    public override Dictionary<string, IPeripheral.PeripheralCallback> Callbacks => callbacks;
+    public override Dictionary<string, lua_CFunction> Callbacks => callbacks;
 
     public override void Destroy()
     {

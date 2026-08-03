@@ -9,21 +9,29 @@ namespace spesscore.VM;
 class VMCore(byte[] startup)
 {
     // main lock
-    Lock Lock = new();
+    public Lock Lock = new();
     List<Library> Libs = [];
     bool LuaInit = false;
-    lua_State L;
-    lua_State TL;
+    public lua_State L;
+    public lua_State TL;
 
-    Lock LuaLock = new(); // required for accessing either L or TL.
+    public Lock LuaLock = new(); // required for accessing either L or TL.
 
     public double ExecSoftDeadline;
     public double ExecHardDeadline;
     public double ResumeDeadline;
     int Punishment = 0;
     public int Punish => Punishment;
-    Lock TimingLock = new();
+    public Lock TimingLock = new();
     int State = 0;
+    bool StateTest(VMState s)
+    {
+        int t = (int)s;
+        Interlocked.And(ref t, State);
+        return t > 0;
+    }
+    public bool Paused => StateTest(VMState.Paused);
+    public bool IOWait => StateTest(VMState.IOWait);
     byte[] StartupCode = startup;
 
     public event Action<string> OnError;
@@ -46,11 +54,7 @@ class VMCore(byte[] startup)
 
     public bool ShouldRun()
     {
-        int mask1 = (int)VMState.Active;
-        int mask2 = (int)(VMState.IOWait | VMState.Paused);
-        Interlocked.And(ref mask1, State);
-        Interlocked.And(ref mask2, State);
-        return (mask1 > 0) && (mask2 == 0);
+        return StateTest(VMState.Active) && !StateTest(VMState.IOWait | VMState.Paused);
     }
 
     // used externally, forces a preempt yield.
@@ -88,7 +92,7 @@ class VMCore(byte[] startup)
         return dead;
     }
 
-    nint CurrentAlloc = 0;
+    public nint CurrentAlloc = 0;
     public nint MaxMemory = 0;
     unsafe nuint Allocator(lua_State ud, nuint ptr, ulong osize, ulong nsize)
     {
@@ -114,6 +118,7 @@ class VMCore(byte[] startup)
             LuaInit = true;
             AllocatorDel = Allocator;
             L = lua_newstate(AllocatorDel, 0);
+            TL = L;
             luaL_openlibs(L);
             foreach (var lib in Libs)
             {

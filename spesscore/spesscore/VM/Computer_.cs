@@ -113,7 +113,7 @@ class Computer_
         //QueryReader.InitLib(L);
     }
 
-    static lua_CFunction PerCallDel = PeripheralCall;
+    /* static lua_CFunction PerCallDel = PeripheralCall;
     protected internal static int PeripheralCall(lua_State L)
     {
         Computer? c = lua_ToObject<Computer>(L, lua_upvalueindex(1));
@@ -131,20 +131,20 @@ class Computer_
             return luaL_error(L, "invalid callback");
         }
         return value(L);
-    }
+    } */
 
-    protected internal void PushPeripheral<T>(lua_State l, T p) where T : IPeripheral
+    /* protected internal void PushPeripheral<T>(lua_State l, T p) where T : IPeripheral
     {
         lua_PushObjectManaged(L, p);
         lua_newtable(L);
         //l.PushString("__tostring");
-        /* l.PushCFunction((ptr) =>
+        / * l.PushCFunction((ptr) =>
         {
             Lua ctx = Lua.FromIntPtr(ptr);
             ctx.PushString(p.GetType().FullName);
             return 1;
         });
-        l.SetTable(-3);*/
+        l.SetTable(-3);* /
         lua_pushstring(L, "__index");
         lua_newtable(L);
         foreach (var method in p.Callbacks)
@@ -163,7 +163,7 @@ class Computer_
         lua_settable(L, -3);
 
         lua_setmetatable(L, -2);
-    }
+    } */
 
     public void MemoryResize(int newsize)
     {

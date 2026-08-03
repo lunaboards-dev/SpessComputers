@@ -23,7 +23,8 @@ class Computer
     public Computer()
     {
         VM = new(SpessCore.Instance.MachineLua);
-        //VM.AddLibrary(new ComputerLib(this));
+        VM.AddLibrary(new ComputerLib(this));
+        VM.AddLibrary(new PeripheralAPI(this));
     }
 
     public void AddPeripheral(IPeripheral per)

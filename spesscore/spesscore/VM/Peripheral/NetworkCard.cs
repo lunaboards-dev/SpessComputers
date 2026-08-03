@@ -11,7 +11,7 @@ class NetworkCard : AbstractPeripheral
         
     }
 
-    public override Dictionary<string, IPeripheral.PeripheralCallback> Callbacks => throw new NotImplementedException();
+    public override Dictionary<string, lua_CFunction> Callbacks => throw new NotImplementedException();
 
     public override void Destroy()
     {
