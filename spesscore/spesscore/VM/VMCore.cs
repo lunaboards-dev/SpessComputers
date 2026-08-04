@@ -67,7 +67,7 @@ class VMCore
         //Console.WriteLine("STOP EXEC");
         //Console.WriteLine($"Paused in {ar.currentline}");
         Yield(L);
-        lua_sethook(L, null, 0, 0);
+        lock(LuaLock) lua_sethook(L, null, 0, 0); // oh we should probably lock this
         StateClear(VMState.Running);
         //DumpStack(L);
     }

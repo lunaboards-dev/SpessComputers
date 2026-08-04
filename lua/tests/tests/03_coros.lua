@@ -27,3 +27,38 @@ if test(coroutine.kresume) then
 else
     log.ok("OK!")
 end
+
+print("Testing yield value preservation")
+local vals = {
+  "a",
+  "b",
+  "c",
+}
+local function test2()
+  for i, v in ipairs(vals) do
+    if vals[i+1] then
+      coroutine.yield(v)
+    else
+      return v
+    end
+  end
+end
+local co = coroutine.create(test2)
+print("coro is "..tostring(co))
+local failed = false
+for i, expect in ipairs(vals) do
+  local ok, real = coroutine.resume(co)
+  if not ok then
+    log.error(string.format("FAIL: coroutine error: %s", real))
+  elseif real ~= expect then
+    log.error(("%u: FAIL! Expected %s, got %s"):format(i, expect, real))
+    failed = true
+  else
+    log.ok(("%u: OK!"):format(i))
+  end
+end
+if failed then
+  test_fail("Failures in yield value preservation, see above")
+else
+  log.ok("OK!")
+end

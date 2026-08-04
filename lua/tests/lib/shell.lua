@@ -43,8 +43,20 @@ function shell:read()
                 self.tty:write("\27[D\27[K")
             end
         end
+    elseif bin == 13 then
+        local r = self.buffer
+        self.buffer = ""
+        return r
     else
         self.tty:write(string.format("~x%.2x", bin))
+    end
+end
+
+function shell:readline()
+    self.tty:write("> ")
+    while true do
+        local line = self:read()
+        if line then return line end
     end
 end
 

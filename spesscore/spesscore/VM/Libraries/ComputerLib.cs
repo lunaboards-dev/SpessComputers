@@ -203,8 +203,29 @@ class ComputerLib : Library
         }
         int args = lua_gettop(L);
         int nargs = 0;
+        if (lua_checkstack(S, args-1) == 0)
+        {
+            return luaL_error(L, "Can't reserve space to resume coroutine");
+        }
+        lua_xmove(L, S, args-1);
         lock(c.VM.LuaLock) c.VM.TL = S;
-        lua_resume(S, L, args-1, ref nargs);
+        int status = lua_resume(S, L, args-1, ref nargs);
+        if (status == LUA_OK || status == LUA_YIELD)
+        {
+            if (lua_checkstack(L, nargs+1) == 0)
+            {
+                lua_pop(S, nargs);
+                lock(c.VM.LuaLock) c.VM.TL = L;
+                return luaL_error(L, "Can't reserve space for coroutine yielded values");
+            }
+            lua_pushboolean(L, 1);
+            lua_xmove(S, L, nargs++);
+        } else
+        {
+            lua_pushboolean(L, 0);
+            lua_xmove(S, L, 1);
+            nargs = 2;
+        }
         lock(c.VM.LuaLock) c.VM.TL = L;
         return nargs;
     }

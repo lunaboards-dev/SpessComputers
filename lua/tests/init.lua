@@ -71,5 +71,15 @@ local x, y = sh:get_curpos()
 print(string.format("C: %s, %s", x, y))
 
 while true do
-    sh:read()
+    local line = sh:readline()
+    print("")
+    local f, err = load(line)
+    if not f then
+        log.error("Compile failed: "..err)
+        goto continue
+    end
+    ypcall(f, function(err, bt)
+        log.error(bt)
+    end)
+    ::continue::
 end
