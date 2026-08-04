@@ -7,21 +7,6 @@ tty:write(string.format("Attempting to load local storage...\r\n"))
 tty:write("(c) NANOTRASEN 2206\r\n")
 tty:write("Only for use on authorized hardware.\r\n")
 tty:write("Strike TAB key to interrupt boot.\r\n")]]
-
---[[local rtv = computer.disk():query("select * from fmeta where name=?", "init.lua"):read()
-for k, v in pairs(rtv) do
-    tty:write(string.format("%s\t%q\r\n", k, v))
-end]]
-
---[[ tty:write("> ")
-
-while true do
-    local inpt = tty:next()
-    if inpt then
-        print("yerp: "..#inpt)
-        tty:write(inpt)
-    end
-end ]]
 local disk = peripheral.proxy(computer.disk())
 local q = disk:query("select inode, size from fmeta where name = ? and parent is null", "init.lua")
 if q:empty() then
@@ -36,6 +21,5 @@ else
         table.insert(blocks, blk)
     end
     local src = table.concat(blocks):gsub("\0+$", "")
-    print(src)
     assert(load(src, "=init.lua"))(disk.id)
 end

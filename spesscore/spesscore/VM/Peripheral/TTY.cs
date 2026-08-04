@@ -42,7 +42,6 @@ class TTY : AbstractPeripheral
     public void FillBuffer(byte[] bytes)
     {
         buffer.Put(bytes);
-        Console.WriteLine($"bytes: {bytes.Length}, buffer size: {buffer.Size}");
     }
 
     public void Write(string str)

@@ -202,7 +202,6 @@ class ComputerLib : Library
             luaL_error(L, "Attempt to resume dead thread.");
         }
         int args = lua_gettop(L);
-        Console.WriteLine($"Resuming thread {S}");
         int nargs = 0;
         lock(c.VM.LuaLock) c.VM.TL = S;
         lua_resume(S, L, args-1, ref nargs);

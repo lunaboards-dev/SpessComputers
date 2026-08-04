@@ -61,4 +61,15 @@ for test in assert(dir("tests")) do
     dofile("tests/"..test)
 end
 
-log.ok("Tests passed!")
+log.ok("Tests passed! Dropping into lua shell for demos.")
+
+local shell = dofile("lib/shell.lua")
+local sh = shell.new(computer.tty())
+
+local x, y = sh:get_curpos()
+
+print(string.format("C: %s, %s", x, y))
+
+while true do
+    sh:read()
+end
