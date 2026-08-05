@@ -10,7 +10,7 @@ do
 	local CAP_POSITION = -2
 	local L_ESC = '%'
 	local SPECIALS = "^$*+?.([%-"
-	local SHORT_STRING = 500 -- use native implementations for short strings
+	local SHORT_STRING = 0--500 -- use native implementations for short strings
 
 	local string_find, string_lower, string_match, string_gmatch, string_gsub =
 				string.find, string.lower, string.match, string.gmatch, string.gsub
@@ -377,7 +377,7 @@ do
 			if i == 0 then  -- ms->level == 0, too
 				return s:head(e - s)  -- add whole match
 			else
-				error("invalid capture index")
+				error("invalid capture index %"..(i+1)) -- lua 5.4 expects the parameter number in the error
 			end
 		else
 			local l = ms.capture[i].len;
@@ -471,9 +471,9 @@ do
 		checkArg(1, s, "string")
 		checkArg(2, pattern, "string")
 
-		if #s < SHORT_STRING then
+		--[[ if #s < SHORT_STRING then
 			return string_gmatch(s, pattern, init)
-		end
+		end ]] -- never use the native implementation since we can't yield callbacks
 
 		local start = 0
 		if isLuaOver54 then
@@ -518,8 +518,11 @@ do
 				b = b .. news:sub(i, i)
 			else
 				i = i + 1  -- skip ESC
-				if not isdigit(news:sub(i, i)) then
+				if news:sub(i, i) == L_ESC then
 					b = b .. news:sub(i, i)
+				elseif not isdigit(news:sub(i, i)) then -- lua 5.4 says we should raise an error!
+					--b = b .. news:sub(i, i)
+					error("invalid use of '%'")
 				elseif news:sub(i, i) == '0' then
 					b = b .. s:head(e - s)
 				else

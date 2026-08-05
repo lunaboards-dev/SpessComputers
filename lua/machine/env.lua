@@ -12,6 +12,8 @@ local sandbox = {
 	type = type,
 	assert = assert,
 	getmetatable = getmetatable,
+	error = error,
+	pcall = pcall, -- this should be fine?
 	coroutine = cr,
 	string = {
 		byte = string.byte,
@@ -126,6 +128,8 @@ local sandbox = {
 	},
 	peripheral = peripheral -- this one is safe
 }
+
+sandbox._G = sandbox
 
 function sandbox.load(chunk, chunkname, mode, env)
 	return load(chunk, chunkname, "t", sandbox or env)

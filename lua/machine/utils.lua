@@ -44,3 +44,7 @@ local function gatekeeper(func) -- this is required for debug functions
     local res = func() -- break tailcall
     return res
 end
+
+local function bit_cast(from, to, ...)
+
+end

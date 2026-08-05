@@ -121,10 +121,11 @@ class VMCore
         int count = 0;
         int status = lua_resume(L, 0, 0, ref count);
         double end_time = Times.CurTime;
+        double times = (end_time-ExecHardDeadline)/Config.ContextSwitchTime;
         if (end_time >= ExecHardDeadline && !IgnoreDeadline)
         {
             OnWatchdog?.Invoke();
-            Console.WriteLine("Watchdog triggered");
+            Console.WriteLine($"Watchdog triggered ({times}x limit)");
             return true; // NOT INTO THE PIT, IT BURNS
         }
         bool dead = status != LUA_YIELD;
@@ -138,8 +139,8 @@ class VMCore
             OnError?.Invoke(err);
         }
         lua_pop(L, count);
-        Punishment = (int)Math.Floor((end_time-ExecHardDeadline)/Config.ContextSwitchTime);
         StateClear(VMState.Running);
+        Punishment = (int)Math.Floor(times);
         return dead;
     }
 
