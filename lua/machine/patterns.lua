@@ -1,4 +1,4 @@
-
+local slib = {}
 --[[ This is pretty much a straight port of Lua's pattern matching code from
 		 the standard PUC-Rio C implementation. We want to have this in plain Lua
 		 for the sandbox, so that timeouts also apply while matching stuff, which
@@ -595,8 +595,8 @@ do
 		return b, n  -- number of substitutions
 	end
 
-	string.find = str_find
-	string.match = str_match
-	string.gmatch = str_gmatch
-	string.gsub = str_gsub
+	slib.find = str_find
+	slib.match = str_match
+	slib.gmatch = str_gmatch
+	slib.gsub = str_gsub
 end

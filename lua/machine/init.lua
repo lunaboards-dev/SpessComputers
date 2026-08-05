@@ -3,11 +3,16 @@
 --#include "patterns.lua"
 --#include "peripheral.lua"
 --#include "coro.lua"
+--#include "frexp.lua"
 --#include "env.lua"
 
 ypcall(function()
-    local bios = assert(load(peripheral.call(computer.eeprom(), "code"), "=bios.lua"))
-    yield() -- this will also GC
+    local bios = assert(sandbox.load(peripheral.call(computer.eeprom(), "code"), "=bios"))
+    for i=1, 10 do
+        yield()
+        collectgarbage()
+    end
+    computer.set_mem_baseline()
     gatekeeper(bios)
 end, function(err, trace)
     -- print to vt

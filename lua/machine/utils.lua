@@ -24,6 +24,8 @@ end
 
 local _xpcall = xpcall
 function ypcall(f, errh, ...)
+	checkArg(1, f, "function")
+	checkArg(2, errh, "function")
 	local xerr, xdtb
 	local res = table.pack(_xpcall(f, function(err)
 		xerr = err
@@ -34,7 +36,6 @@ function ypcall(f, errh, ...)
 	end
 	return table.unpack(res)
 end
-xpcall = nil
 
 local rare_fox = computer.rare_fox
 computer.rare_fox = nil

@@ -3,8 +3,9 @@ local bdev = peripheral.proxy(_bdev)
 
 local tty = peripheral.proxy(computer.tty())
 
-local _print = print
+local _print = print or function()end
 function print(str)
+    str = tostring(str)
     tty:write(str:gsub("\n", "\r\n").."\r\n")
     _print(str)
 end
@@ -73,6 +74,9 @@ print(string.format("C: %s, %s", x, y))
 while true do
     local line = sh:readline()
     print("")
+    if line:sub(1,1) == "=" then
+        line = "print("..line:sub(2)..")"
+    end
     local f, err = load(line)
     if not f then
         log.error("Compile failed: "..err)

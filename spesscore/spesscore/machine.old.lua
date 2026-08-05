@@ -1,7 +1,18 @@
-local isLuaOver55 = _VERSION:match("5.5")
-local isLuaOver54 = isLuaOver55 or _VERSION:match("5.4")
-local isLuaOver53 = isLuaOver54 or _VERSION:match("5.3")
+print("machine.lua")
+local _exit = os.exit
+--[[ computer = {}
 
+local c = _computer
+for k, v in pairs(getmetatable(_computer).__index) do
+	local func = v
+	computer[k] = function(...)
+		return v(c, ...)
+	end
+end
+_computer = nil ]]
+-- we do all the init here
+
+-- taken straight from OC's machine.lua
 local function checkArg(n, have, ...)
 	have = type(have)
 	local function check(want, ...)
@@ -18,37 +29,6 @@ local function checkArg(n, have, ...)
 	end
 end
 
-local function tty_write(str)
-	peripheral.call(computer.tty(), "write", str)
-end
-
-local function tty_writeln(str)
-	tty_write(str.."\r\n")
-end
-
-local _xpcall = xpcall
-function ypcall(f, errh, ...)
-	checkArg(1, f, "function")
-	checkArg(2, errh, "function")
-	local xerr, xdtb
-	local res = table.pack(_xpcall(f, function(err)
-		xerr = err
-		xdtb = debug.traceback(err)
-	end, ...))
-	if not res[1] then
-		errh(xerr, xdtb)
-	end
-	return table.unpack(res)
-end
-
-local rare_fox = computer.rare_fox
-computer.rare_fox = nil
-
-local function gatekeeper(func) -- this is required for debug functions
-    local res = func() -- break tailcall
-    return res
-end
-local slib = {}
 --[[ This is pretty much a straight port of Lua's pattern matching code from
 		 the standard PUC-Rio C implementation. We want to have this in plain Lua
 		 for the sandbox, so that timeouts also apply while matching stuff, which
@@ -645,20 +625,15 @@ do
 		return b, n  -- number of substitutions
 	end
 
-	slib.find = str_find
-	slib.match = str_match
-	slib.gmatch = str_gmatch
-	slib.gsub = str_gsub
+	string.find = str_find
+	string.match = str_match
+	string.gmatch = str_gmatch
+	string.gsub = str_gsub
 end
 
-local proxy_cache = setmetatable({}, {__mode="v"})
-
 function peripheral.proxy(id)
-    checkArg(1, id, "string")
-    if proxy_cache[id] then return proxy_cache[id] end
 	local meths = peripheral.methods(id)
 	local t = {id=id}
-    proxy_cache[id] = t
 	for i=1, #meths do
 		t[meths[i]] = function(self, ...)
 			return peripheral.call(id, meths[i], ...)
@@ -666,6 +641,7 @@ function peripheral.proxy(id)
 	end
 	return t
 end
+
 local preempt = computer.preempt
 local set_thd = computer.set_current_thread
 local thd_resume = computer.thd_resume
@@ -717,190 +693,81 @@ for k, v in pairs(coro) do
 	if not cr[k] then cr[k] = v end
 end
 
---coroutine = cr
-local function l54_frexp(x)
-    checkArg(1, x, "number")
-    if x == 0 then
-        return 0, 0
-    end
-    local bits = string.unpack("l", (string.pack("d", x))) -- magic pure lua casting function
-    -- extract sign bit
-    local sign = bits & (1 << 63)
-    -- exponent is bits 52 to 62, and it's offset by 1023.
-    local exp_ = ((bits >> 52) & 0x7FF)
-    local exp = exp_ - 1023
-    -- handle special cases
-    if exp_ == 0x7FF then
-        return x, exp+1
-    end
-    -- bits 0 to 51 are the mantissa
-    local mant_bits = bits & 0xFFFFFFFFFFFFF
-    -- we then wanna normalize the mantissa and put the sign bit back on.
-    local mant = string.unpack("d", (string.pack("l", mant_bits | 0x3FE0000000000000 | sign)))
-    -- increase exponent by 1 and return
-    return mant, exp+1
-end
-local sandbox = {
-	ipairs = ipairs,
-	next = next,
-	pairs = pairs,
-	rawequal = rawequal,
-	rawget = rawget,
-	rawlen = rawlen,
-	rawset = rawset,
-	select = select,
-	tonumber = tonumber,
-	tostring = tostring,
-	type = type,
-	assert = assert,
-	getmetatable = getmetatable,
-	coroutine = cr,
-	string = {
-		byte = string.byte,
-		char = string.char,
-		dump = string.dump,
-		find = slib.find,
-		format = string.format,
-		gmatch = slib.gmatch,
-		gsub = slib.gsub,
-		len = string.len,
-		lower = string.lower,
-		match = slib.match,
-		rep = string.rep,
-		reverse = string.reverse,
-		sub = string.sub,
-		upper = string.upper,
-		pack = string.pack,
-		unpack = string.unpack,
-		packsize = string.packsize
-	},
-	table = {
-		concat = table.concat,
-		insert = table.insert,
-		pack = table.pack,
-		remove = table.remove,
-		sort = table.sort,
-		unpack = table.unpack,
-		move = table.move
-	},
-	math = {
-		abs = math.abs,
-		acos = math.acos,
-		asin = math.asin,
-		atan = math.atan,
-		atan2 = math.atan2 or math.atan, -- Deprecated in Lua 5.3
-		ceil = math.ceil,
-		cos = math.cos, -- Deprecated in Lua 5.3
-		cosh = math.cosh or function(x)
-			checkArg(1, x, "number")
-			return (math.exp(x) + math.exp(-x)) / 2
-		end,
-		deg = math.deg,
-		exp = math.exp,
-		floor = math.floor,
-		fmod = math.fmod,
-		frexp = math.frexp or l54_frexp, -- Deprecated in Lua 5.3
-		huge = math.huge,
-		ldexp = math.ldexp or function(a, e) -- Deprecated in Lua 5.3
-			checkArg(1, x, "number")
-			return a*(2.0^e)
-		end,
-		log = math.log,
-		max = math.max,
-		min = math.min,
-		modf = math.modf,
-		pi = math.pi,
-		pow = math.pow or function(a, b) -- Deprecated in Lua 5.3
-			checkArg(1, x, "number")
-			return a^b
-		end,
-		rad = math.rad,
-		random = math.random,
-		randomseed = math.randomseed,
-		sin = math.sin,
-		sinh = math.sinh or function(x) -- Deprecated in Lua 5.3
-			checkArg(1, x, "number")
-			return (math.exp(x) - math.exp(-x)) / 2
-		end,
-		sqrt = math.sqrt,
-		tan = math.tan,
-		tanh = math.tanh or function(x) -- Deprecated in Lua 5.3
-			checkArg(1, x, "number")
-			local e2x = math.exp(2 * x)
-			return (e2x - 1) / (e2x + 1)
-		end,
-		-- Lua 5.3.
-		maxinteger = math.maxinteger,
-		mininteger = math.mininteger,
-		tointeger = math.tointeger,
-		type = math.type,
-		ult = math.ult
-	},
-	os = {
-		date = os.date,
-		difftime = function(t2, t1)
-			return t2 - t1
-		end,
-		time = function(table)
-			checkArg(1, table, "table", "nil")
-			return os.time(table)
-		end
-	},
-	utf8 = {
-		char = utf8.char,
-		charpattern = utf8.charpattern,
-		codes = utf8.codes,
-		codepoint = utf8.codepoint,
-		len = utf8.len,
-		offset = utf8.offset
-	},
-	check_arg = checkArg,
-	checkArg = checkArg,
-	ypcall = ypcall,
-	computer = { -- make sure we don't pass any internal functions to the sandbox
-		eeprom = computer.eeprom,
-		tty = computer.tty,
-		disk = computer.disk,
-		mem_total = computer.mem_total,
-		mem_used = computer.mem_used,
-		mem_free = function() return computer.mem_total()-computer.mem_used() end,
-		pull_signal = computer.pull_signal
-	},
-	peripheral = peripheral -- this one is safe
+coroutine = cr
+os = {
+	clock = os.clock,
+	date = os.date,
+	difftime = os.difftime,
+	time = os.time
 }
 
-function sandbox.load(chunk, chunkname, mode, env)
-	return load(chunk, chunkname, "t", sandbox or env)
+math.randomseed = nil
+
+debug = {
+	traceback = debug.traceback
+}
+
+local function tty_write(str)
+	peripheral.call(computer.tty(), "write", str)
 end
 
-function sandbox.setmetatable(obj, meta)
-	checkArg(1, obj, "table") -- only allow this to be used on tables
-	checkArg(2, meta, "table", "nil")
-	if meta then
-		rawset(meta, "__gc", nil) -- no gc hooks
+local function tty_writeln(str)
+	tty_write(str.."\r\n")
+end
+
+local _xpcall = xpcall
+function ypcall(f, errh, ...)
+	local xerr, xdtb
+	local res = table.pack(_xpcall(f, function(err)
+		xerr = err
+		xdtb = debug.traceback(err)
+	end, ...))
+	if not res[1] then
+		errh(xerr, xdtb)
 	end
-	return setmetatable(obj, meta)
+	return table.unpack(res)
 end
+xpcall = nil
 
+local rare_fox = computer.rare_fox
+computer.rare_fox = nil
 
-ypcall(function()
-    local bios = assert(sandbox.load(peripheral.call(computer.eeprom(), "code"), "=bios"))
-    for i=1, 10 do
-        yield()
-        collectgarbage()
-    end
-    computer.set_mem_baseline()
-    gatekeeper(bios)
-end, function(err, trace)
-    -- print to vt
-    local tty = computer.tty()
-    if tty then
-        --print(debug.traceback(err))
-        tty_writeln(trace:gsub("\n","\r\n"))
-        tty_writeln("\r\n")
-        tty_write("\27[2;60H")
-        tty_writeln(rare_fox())
-        tty_writeln("\27[;60H Crashes are rare")
-        tty_writeln("\27[9;60H  As is this fox")
-    end
+local mcr = coro.create(function()
+	ypcall(function()
+		print("yerp")
+		--computer.set_mem_baseline()
+		computer.set_mem_baseline = nil
+		--computer.dump_stack()
+		tty_write("yerp2")
+		local bios = load(peripheral.call(computer.eeprom(), "code"), "=bios.lua")
+		print("yerp 2")
+		computer.pull_signal()
+		bios()
+		error("halted")
+	end, function(err, trace)
+		-- print to vt
+		local tty = computer.tty()
+		print(trace)
+		--_exit(1)
+		if tty then
+			--print(debug.traceback(err))
+			tty_writeln(trace:gsub("\n","\r\n"))
+			tty_writeln("\r\n")
+			tty_write("\27[2;60H")
+			tty_writeln(rare_fox())
+			tty_writeln("\27[;60H Crashes are rare")
+			tty_writeln("\27[9;60H  As is this fox")
+		end
+	end)
 end)
+
+--computer.dump_stack()
+
+tty_write("terp")
+
+print("resuming 1")
+assert(thd_resume(mcr))
+print("resuming 2")
+while coro.status(mcr) ~= "dead" do
+	assert(thd_resume(mcr, yield()))
+end

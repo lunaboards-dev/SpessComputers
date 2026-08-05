@@ -49,4 +49,4 @@ for k, v in pairs(coro) do
 	if not cr[k] then cr[k] = v end
 end
 
-coroutine = cr
+--coroutine = cr
