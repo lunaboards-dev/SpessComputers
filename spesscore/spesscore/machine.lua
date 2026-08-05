@@ -18,6 +18,8 @@ local function checkArg(n, have, ...)
 	end
 end
 
+local critical = system.critical
+
 local function tty_write(str)
 	peripheral.call(computer.tty(), "write", str)
 end
@@ -31,18 +33,18 @@ function ypcall(f, errh, ...)
 	checkArg(1, f, "function")
 	checkArg(2, errh, "function")
 	local xerr, xdtb
-	local res = table.pack(_xpcall(f, function(err)
+	local c_errh = critical(function(err)
 		xerr = err
 		xdtb = debug.traceback(err)
-	end, ...))
+	end)
+	local res = table.pack(_xpcall(f, c_errh, ...))
 	if not res[1] then
 		errh(xerr, xdtb)
 	end
 	return table.unpack(res)
 end
 
-local rare_fox = computer.rare_fox
-computer.rare_fox = nil
+local rare_fox = system.rare_fox
 
 local function gatekeeper(func) -- this is required for debug functions
     local res = func() -- break tailcall
@@ -673,16 +675,11 @@ function peripheral.proxy(id)
 	end
 	return t
 end
-local preempt = computer.preempt
-local set_thd = computer.set_current_thread
-local thd_resume = computer.thd_resume
-local yield = computer.int_yield
-local is_iores = computer.is_iores
-computer.preempt = nil
-computer.set_thd = nil
-computer.thd_resume = nil
-computer.int_yield = nil
-computer.is_iores = nil
+local preempt = system.preempt
+local set_thd = system.set_current_thread
+local thd_resume = system.thd_resume
+local yield = system.int_yield
+local is_iores = system.is_iores
 
 -- wrap coro library
 local coro = coroutine
@@ -788,7 +785,7 @@ local sandbox = {
 		insert = table.insert,
 		pack = table.pack,
 		remove = table.remove,
-		sort = table.sort,
+		sort = critical(table.sort),
 		unpack = table.unpack,
 		move = table.move
 	},
@@ -875,7 +872,8 @@ local sandbox = {
 		mem_free = function() return computer.mem_total()-computer.mem_used() end,
 		pull_signal = computer.pull_signal
 	},
-	peripheral = peripheral -- this one is safe
+	peripheral = peripheral, -- this one is safe
+	critical = critical
 }
 
 sandbox._G = sandbox
@@ -900,7 +898,7 @@ ypcall(function()
         yield()
         collectgarbage()
     end
-    computer.set_mem_baseline()
+    system.set_mem_baseline()
     gatekeeper(bios)
 end, function(err, trace)
     -- print to vt

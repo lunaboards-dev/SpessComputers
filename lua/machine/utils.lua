@@ -14,6 +14,8 @@ local function checkArg(n, have, ...)
 	end
 end
 
+local critical = system.critical
+
 local function tty_write(str)
 	peripheral.call(computer.tty(), "write", str)
 end
@@ -27,18 +29,18 @@ function ypcall(f, errh, ...)
 	checkArg(1, f, "function")
 	checkArg(2, errh, "function")
 	local xerr, xdtb
-	local res = table.pack(_xpcall(f, function(err)
+	local c_errh = critical(function(err)
 		xerr = err
 		xdtb = debug.traceback(err)
-	end, ...))
+	end)
+	local res = table.pack(_xpcall(f, c_errh, ...))
 	if not res[1] then
 		errh(xerr, xdtb)
 	end
 	return table.unpack(res)
 end
 
-local rare_fox = computer.rare_fox
-computer.rare_fox = nil
+local rare_fox = system.rare_fox
 
 local function gatekeeper(func) -- this is required for debug functions
     local res = func() -- break tailcall

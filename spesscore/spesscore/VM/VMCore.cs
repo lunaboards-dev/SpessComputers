@@ -50,6 +50,17 @@ class VMCore
     public bool IOWait => StateTest(VMState.IOWait);
     public bool Running => StateTest(VMState.Running);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void EnterCritical()
+    {
+        StateSet(VMState.Critical);
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void ExitCritical()
+    {
+        StateClear(VMState.Critical);
+    }
+
     byte[] StartupCode;
 
     public event Action<string> OnError;
@@ -77,7 +88,7 @@ class VMCore
         // lock, just in case
         lock (TimingLock)
         {
-            ExecHardDeadline = Times.CurTime + (Config.ContextSwitchTime*20);
+            ExecHardDeadline = Times.CurTime + (Config.ContextSwitchTime*100);
             ExecSoftDeadline = Times.CurTime + Config.ContextSwitchTime;
         }
     }
@@ -105,6 +116,8 @@ class VMCore
     // used internally, forces a generic yield.
     public int Yield(lua_State L, bool as_preempt=false)
     {
+        // don't actually yield if we're in a critical function, unless we've hit the hard deadline
+        if (StateTest(VMState.Critical) && (Times.CurTime < ExecHardDeadline)) return 0;
         if (as_preempt)
         {
             StateSet(VMState.Paused);
@@ -121,7 +134,7 @@ class VMCore
         int count = 0;
         int status = lua_resume(L, 0, 0, ref count);
         double end_time = Times.CurTime;
-        double times = (end_time-ExecHardDeadline)/Config.ContextSwitchTime;
+        double times = (end_time-ExecSoftDeadline)/Config.ContextSwitchTime;
         if (end_time >= ExecHardDeadline && !IgnoreDeadline)
         {
             OnWatchdog?.Invoke();

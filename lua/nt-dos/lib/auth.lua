@@ -1,1 +1,3 @@
 local auth = {}
+
+return auth

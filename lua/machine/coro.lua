@@ -1,13 +1,8 @@
-local preempt = computer.preempt
-local set_thd = computer.set_current_thread
-local thd_resume = computer.thd_resume
-local yield = computer.int_yield
-local is_iores = computer.is_iores
-computer.preempt = nil
-computer.set_thd = nil
-computer.thd_resume = nil
-computer.int_yield = nil
-computer.is_iores = nil
+local preempt = system.preempt
+local set_thd = system.set_current_thread
+local thd_resume = system.thd_resume
+local yield = system.int_yield
+local is_iores = system.is_iores
 
 -- wrap coro library
 local coro = coroutine

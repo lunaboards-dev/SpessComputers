@@ -14,8 +14,11 @@
 ~	chown=0:0   chmod=rw-rw-r--
 ~   $type=directory chmod=rwxr-xr-x
 ~init.lua   chmod=rw-rw----
-~bin/	chmod=rwxrwxr-x
-~daemon/	chmod=rwxrwxr-x
-~lib/	$ext=lua	chmod=rwxrwxr-x
+~bin/	chmod=rwxr-xr-x
+~daemon/	chmod=rwxr-xr-x
+~lib/	$ext=lua	chmod=rwxr-xr-x
+# normal users shouldn't be able to read/write to /lib/core or /boot
+~lib/core/  chmod=rwxr-x---
+~boot/  chmod=rwxr-x---
 -.install
 +user	type=directory

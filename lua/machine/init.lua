@@ -12,7 +12,7 @@ ypcall(function()
         yield()
         collectgarbage()
     end
-    computer.set_mem_baseline()
+    system.set_mem_baseline()
     gatekeeper(bios)
 end, function(err, trace)
     -- print to vt

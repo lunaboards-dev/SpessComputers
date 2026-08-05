@@ -39,7 +39,7 @@ local sandbox = {
 		insert = table.insert,
 		pack = table.pack,
 		remove = table.remove,
-		sort = table.sort,
+		sort = critical(table.sort),
 		unpack = table.unpack,
 		move = table.move
 	},
@@ -126,7 +126,8 @@ local sandbox = {
 		mem_free = function() return computer.mem_total()-computer.mem_used() end,
 		pull_signal = computer.pull_signal
 	},
-	peripheral = peripheral -- this one is safe
+	peripheral = peripheral, -- this one is safe
+	critical = critical
 }
 
 sandbox._G = sandbox

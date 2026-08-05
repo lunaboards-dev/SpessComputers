@@ -25,6 +25,7 @@ class Computer
         VM = new(SpessCore.Instance.MachineLua);
         VM.AddLibrary(new ComputerLib(this));
         VM.AddLibrary(new PeripheralAPI(this));
+        VM.AddLibrary(new SystemLib(this));
     }
 
     public void AddPeripheral(IPeripheral per)

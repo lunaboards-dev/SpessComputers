@@ -21,14 +21,7 @@ class ComputerLib : Library
             {"disk", GetDisk},
             {"mem_total", GetMemory},
             {"mem_used", GetUsedMemory},
-            {"preempt", IsPreempted},
-            {"rare_fox", RareFoxDel},
-            {"set_mem_baseline", SetMemoryBaseline},
-            //{"set_thd", SetThread},
             {"pull_signal", PullSignal},
-            {"thd_resume", ThdResume},
-            {"int_yield", OnlyYield},
-            {"is_iores", IsIoresume},
             //{"dump_stack", Computer.DumpStackL}
         };
     }
@@ -101,7 +94,6 @@ class ComputerLib : Library
     //static lua_CFunction GetTTYDel = GetTTY;
     int GetTTY(lua_State L)
     {
-        Console.WriteLine("GetTTY");
         //Computer c = lua_ToObject<Computer>(L, 1);//Computer c = L.ToObject<Computer>(1, false);
         //DumpStack(L);
         if (c == null)
@@ -111,7 +103,6 @@ class ComputerLib : Library
         }
         if (c.LocalTTY == null) return 0;
         lua_pushstring(L, c.LocalTTY.ID);
-        Console.WriteLine("GetTTY (end)");
         return 1;
     }
 
@@ -140,36 +131,6 @@ class ComputerLib : Library
         return 1;
     }
 
-    //static lua_CFunction IsPreDel = IsPreempted;
-    int IsPreempted(lua_State L)
-    {
-        //Computer c = lua_ToObject<Computer>(L, 1);
-        lua_pushboolean(L, c.VM.Paused ? 1 : 0);
-        return 1;
-    }
-
-    int IsIoresume(lua_State L)
-    {
-        lua_pushboolean(L, 0);
-        //lua_pushboolean(L, c.iores ? 1 : 0);
-        return 1;
-    }
-
-    static lua_CFunction RareFoxDel = RareFox;
-    static int RareFox(lua_State L)
-    {
-        lua_pushbytebuffer(L, SpessCore.Instance.RareFox);
-        return 1;
-    }
-
-    //static lua_CFunction SetMemBase = SetMemoryBaseline;
-    int SetMemoryBaseline(lua_State L)
-    {
-        //Computer c = lua_ToObject<Computer>(L, 1);
-        c.VM.CurrentAlloc = 0;
-        return 0;
-    } // DO NOT EXPOSE THIS
-
     //static lua_CFunction PullSigDel = PullSignal;
     int PullSignal(lua_State L)
     {
@@ -192,46 +153,5 @@ class ComputerLib : Library
     }
 
     //static lua_CFunction ThdResDel = ThdResume;
-    int ThdResume(lua_State L)
-    {
-        //Computer c = lua_ToObject<Computer>(L, 1);
-        luaL_checktype(L, 1, LUA_TTHREAD);
-        lua_State S = lua_tothread(L, 1);
-        if (lua_status(S) != LUA_YIELD && lua_status(S) != LUA_OK)
-        {
-            luaL_error(L, "Attempt to resume dead thread.");
-        }
-        int args = lua_gettop(L);
-        int nargs = 0;
-        if (lua_checkstack(S, args-1) == 0)
-        {
-            return luaL_error(L, "Can't reserve space to resume coroutine");
-        }
-        lua_xmove(L, S, args-1);
-        lock(c.VM.LuaLock) c.VM.TL = S;
-        int status = lua_resume(S, L, args-1, ref nargs);
-        if (status == LUA_OK || status == LUA_YIELD)
-        {
-            if (lua_checkstack(L, nargs+1) == 0)
-            {
-                lua_pop(S, nargs);
-                lock(c.VM.LuaLock) c.VM.TL = L;
-                return luaL_error(L, "Can't reserve space for coroutine yielded values");
-            }
-            lua_pushboolean(L, 1);
-            lua_xmove(S, L, nargs++);
-        } else
-        {
-            lua_pushboolean(L, 0);
-            lua_xmove(S, L, 1);
-            nargs = 2;
-        }
-        lock(c.VM.LuaLock) c.VM.TL = L;
-        return nargs;
-    }
-
-    int OnlyYield(lua_State L)
-    {
-        return lua_yield(L, 0);
-    }
+    
 }

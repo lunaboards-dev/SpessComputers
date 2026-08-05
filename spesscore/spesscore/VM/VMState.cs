@@ -4,5 +4,6 @@ enum VMState : int {
     Active = 1,
     Paused = 2,
     IOWait = 4,
-    Running = 8
+    Running = 8,
+    Critical = 16
 }
