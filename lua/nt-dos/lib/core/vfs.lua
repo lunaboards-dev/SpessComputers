@@ -1,4 +1,14 @@
-local vfs = {}
+local vfs = {
+    f_read = 1,
+    f_write = 2,
+    f_exec = 4,
+    s_user = 0,
+    s_group = 3,
+    s_other = 6,
+    f_suid = 1 << 9,
+    f_sgid = 1 << 10,
+    m_rwx = 7
+}
 
 local hand = {}
 
@@ -36,6 +46,7 @@ function vfs.resolve_path(path)
                 path = path:sub(#path_pfx+1),
                 fs = mount
             })
+            path = mount.prefix
         end
     end
     return mount_xing
@@ -67,10 +78,41 @@ end
 
 function vfs.walk_path(path)
     local cpath = vfs.canonical(path)
+    local mounts = vfs.resolve_path(cpath)
+    local idx = 0
+    local iter
+    local parent = 0
+    local function rtf()
+        if not mounts[idx] then return end
+        if not iter then
+            iter = mounts[idx].path:gmatch("[^/]+")
+            parent = 0
+        end
+        local rtv = iter()
+        if not rtv then idx = idx+1 return rtf() end
+        local st = mounts[idx].fs.fs:rstat(parent, rtv)
+        parent = st.inode
+        return rtv, st
+    end
+    return rtf
 end
 
-function vfs.test_permissions(path, op, uid, ...)
-
+function vfs.test_permissions(path, op, uid, groups)
+    for name, stat in vfs.walk_path(path) do
+        local r_flags = op
+        r_flags = r_flags & (((stat.flags >> vfs.s_other) & vfs.m_rwx) ~ vfs.m_rwx)
+        for i=1, #groups do
+            if stat.ogroup == groups[i] then
+                r_flags = r_flags & (((stat.flags >> vfs.s_group) & vfs.m_rwx) ~ vfs.m_rwx)
+                break
+            end
+        end
+        if stat.owner == uid then
+            r_flags = r_flags & ((stat.flags & vfs.m_rwx) ~ vfs.m_rwx)
+        end
+        if r_flags ~= 0 then return false end
+    end
+    return true
 end
 
 return vfs
