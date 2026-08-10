@@ -7,7 +7,11 @@ local vfs = {
     s_other = 6,
     f_suid = 1 << 9,
     f_sgid = 1 << 10,
-    m_rwx = 7
+    m_rwx = 7,
+    of_read = 1,
+    of_write = 2,
+    of_create = 4,
+    of_truncate = 8
 }
 
 local hand = {}

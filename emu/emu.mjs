@@ -9,16 +9,40 @@ const term = new Terminal({
 term.loadAddon(new ImageAddon());
 term.open(document.getElementById("container"));
 
+//let queue = [];
+
+async function* queueProcessor() {
+    while (true) {
+        const msg = yield
+        if (msg) {
+            const bytes = await msg.data.bytes()
+            term.write(bytes);
+        }
+    }
+}
+
+let queue = queueProcessor();
+
+/* function procQueue() {
+    let first = queue.splice(0,1);
+    if (first.length > 0) {
+        let obj = first[0]
+        obj.msg.data.bytes().then((bytes) => {
+            obj.bytes = bytes;
+        })
+    }
+    
+} */
+
 let ws;
+let id = 0;
 function connect_tty(id) {
     if (ws) {
         ws.close();
     }
     ws = new WebSocket("ws://127.0.0.1:42069/tty");
-    ws.onmessage = (msg) => {
-        msg.data.bytes().then((bytes) => {
-            term.write(bytes)
-        })
+    ws.onmessage = async (msg) => {
+        await queue.next(msg);
     }
     term.onData((data) => {
         ws.send("\x01"+data);
@@ -64,3 +88,5 @@ document.getElementById("hpwr").onclick = () => {
         ws.send("\x02"+JSON.stringify({command: "power", hard: true}));
     }
 }
+
+await queue.next();

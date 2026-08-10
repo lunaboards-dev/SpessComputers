@@ -1,12 +1,11 @@
 local _tty = computer.tty()
 local tty = peripheral.proxy(_tty)
 tty:write("\27[2J\27[H")
-tty:write(string.format("Memory: %dK/%dK\r\n", computer.mem_used()//1024, computer.mem_total()//1024))
-tty:write(string.format("Attempting to load local storage...\r\n"))
---[[tty:write("NT-BIOS v0.13.4444c\r\n")
+tty:write("NT-BIOS v0.13.4444c\r\n")
 tty:write("(c) NANOTRASEN 2206\r\n")
 tty:write("Only for use on authorized hardware.\r\n")
-tty:write("Strike TAB key to interrupt boot.\r\n")]]
+--tty:write("Strike TAB key to interrupt boot.\r\n")
+tty:write(string.format("Memory: %dK\r\n", computer.mem_total()//1024))
 local disk = peripheral.proxy(computer.disk())
 local q = disk:query("select inode, size from fmeta where name = ? and parent is null", "init.lua")
 if q:empty() then
