@@ -9,6 +9,9 @@
 @exec CREATE TABLE groups (pk INTEGER PRIMARY KEY, id int GENERATED ALWAYS AS (pk - 1) STORED UNIQUE, name text NOT NULL, desc text NOT NULL, flags int NOT NULL);
 @exec INSERT INTO groups (name, desc, flags) VALUES ("root", "Root access", 0);
 
+@exec CREATE TABLE registry (app text NOT NULL, store text NOT NULL, key text NOT NULL, value any);
+@exec INSERT INTO registry (app, store, key, value) VALUES ("tty", "exec", "default", "/bin/login")
+
 # setup groups table
 
 ~	chown=0:0   chmod=rw-rw-r--

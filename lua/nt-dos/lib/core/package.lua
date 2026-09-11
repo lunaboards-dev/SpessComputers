@@ -1,6 +1,6 @@
 local preload, loadas = ...
 
-local function create_package_instance(euid, egid)
+local function create_package_instance(euid, egid, clonefrom)
     local package = {}
     package.loaders = {}
     package.loaded = {}
@@ -31,8 +31,10 @@ local function create_package_instance(euid, egid)
         return nil, "no kernel preload[\""..pkg.."\"]"
     end
 
-    local function load_path(pkg)
+    table.insert(package.loaders, load_preload)
 
+    local function load_path(pkg)
+        
     end
 
     return package

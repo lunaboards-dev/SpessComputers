@@ -15,7 +15,10 @@ proc_ctx = {
     id:int,
     start:float,
     env:table,
-    children:table{__mode=v}
+    children:table{__mode=v},
+    priority:int,
+    lastrun:float,
+    cputime:float
 }
 ]]
 
@@ -54,6 +57,7 @@ function proc.run()
     while true do
         deadline = computer.time() + syscfg.sched.deadline
         for i=1, #procs do
+            if computer.time() > deadline then break end
             local p = procs[i]
             local ok, exit_code, time = pcall(c_kresume, p.coro)
             if not ok then -- task failed, the children must die
@@ -61,7 +65,6 @@ function proc.run()
                 goto continue
             end
             if not exit_code then goto continue end
-            
             ::continue::
         end
     end

@@ -1,0 +1,21 @@
+local args = argparse($@)
+
+if args.h then
+    $stderr:print("""
+    Usage:
+        di [-hH] <disk>
+    """)
+    exit 0
+end
+
+local disk = args[1]
+if type(disk) ~= "dev::disk" then
+    $stderr:print("Device must be a disk")
+    exit 1
+end
+
+$stdout:print("""
+Disk \{disk.id}
+    Size (pages): \{disk:size()}
+    Used pages:   \{disk:usage(),}
+""")
