@@ -16,12 +16,13 @@ bool IPC_Send(CByondValue * ss, IPCSectionID id, void * buffer, size_t size) {
         .sectype = id,
         .len = size
     };
-    if (send(Core.Handle, &hdr, sizeof(ipc_header), 0) < sizeof(ipc_header)) {
-        WTF_BWOINK(*ss, "somehow sent less bytes than sizeof(ipc_header)");
+
+    if (MainSocket->write(&hdr, sizeof(ipc_header)) != ISOCK_OK) {
+        WTF_BWOINK(*ss, "failed to send header");
         return false;
     }
-    if (send(Core.Handle, buffer, size, 0) < size) {
-        WTF_BWOINK(*ss, "somehow sent less bytes than size of buffer");
+    if (MainSocket->write(buffer, size) != ISOCK_OK) {
+        WTF_BWOINK(*ss, "failed to send buffer");
         return false;
     }
     return true;
