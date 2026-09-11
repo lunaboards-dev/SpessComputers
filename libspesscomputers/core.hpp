@@ -8,6 +8,7 @@
 #include <sys/un.h>
 #include <format>
 #include <queue>
+#include "utils.hpp"
 
 #define NUMBER 0x2A
 #define DATUM 0x21
@@ -82,10 +83,5 @@ BYOND_API_DEF(tick)
 BYOND_API_DEF(power)
 BYOND_API_DEF(send_signal)
 BYOND_API_DEF(register_api)
-
-void bwoink(CByondValue &src, const char * msg);
-inline void bwoink(CByondValue &src, std::string msg) {
-    bwoink(src, msg.c_str());
-}
 
 #define WTF_BWOINK(SSsc, msg) bwoink(SSsc, std::format("WTF!? {}({}:{}) - {}", __func__, __FILE__, __LINE__, msg))

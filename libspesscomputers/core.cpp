@@ -1,6 +1,8 @@
 #include "core.hpp"
 #include "spawn.hpp"
 #include "ipc.hpp"
+#include "spesscore.hpp"
+#include "socket.hpp"
 
 #include <string>
 #include <vector>
@@ -103,45 +105,8 @@ std::vector<std::string> CreateArgList(CByondValue &val, std::string &workspace_
     return args;
 }
 
-struct sc_state {
-    bool running;
-    bool crashed;
-    int code;
-};
-
-#ifdef __linux__
-#include <sys/wait.h>
-#include <signal.h>
-#include <stdexcept>
-sc_state proc_state(int pid) {
-    sc_state st = {
-        .running = false,
-        .crashed = false,
-        .code = -1
-    };
-    int stat = 0;
-    if (waitpid(pid, &stat, WNOHANG) == 0) {
-        st.running = true;
-    } else if (WIFSIGNALED(stat)) { // crashed
-        st.running = false;
-        st.crashed = true;
-        st.code = WTERMSIG(stat);
-    } else if (WIFEXITED(stat)) {
-        st.running = false;
-        st.crashed = false;
-        st.code = WEXITSTATUS(stat);
-    }
-    return st;
-}
-
-#elifdef __WIN32__
-sc_state proc_state(int pid) {
-
-}
-#endif
-
-bool is_proc_kill(int pid, CByondValue &src) {
-    auto st = proc_state(pid);
+/* bool is_proc_kill(int pid, CByondValue &src) {
+    auto st = Spesscore.status();
     if (st.running) return false;
     if (st.crashed) { // everything is fucked
         bwoink(src, std::format("spesscore crashed! ({})", strsignal(st.code)));
@@ -151,14 +116,14 @@ bool is_proc_kill(int pid, CByondValue &src) {
         return true;
     }
     return false;
-}
+} */
 
 SpessComputers::~SpessComputers() {
     // clean up our mess
 }
 
 bool AttemptRecovery(CByondValue &src) {
-    if (proc_state(Core.PID).running) { // spesscore is still valid! why did we restart?
+    if (Spesscore->state().running) { // spesscore is still valid! why did we restart?
         WTF_BWOINK(src, "attempt to restart despite core still running!");
         return false;
     }
@@ -242,25 +207,16 @@ inline CByondValue IntVal(int v) {
 
 BYOND_API_METHOD(init_try_connect) {
     try {
-        int fd;
         if (argc < 1) return IntVal(SC_CON_DEAD);
-        if (is_proc_kill(Core.PID, *argv)) {
+        if (Spesscore->dead(*argv)) {
             return IntVal(SC_CON_DEAD);
         }
-        if ((fd = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
-            // bwoink
-            bwoink(argv[0], "failed to create socket");
-            return IntVal(SC_CON_DEAD);
-        }
-        if (connect(fd, (struct sockaddr *) &Core.SocketAddr, sizeof(Core.SocketAddr)) == -1) {
-            // bwoink
-            close(fd);
-        } else {
-            Core.Handle = fd;
+        int stat = MainSocket->try_connect(Core.IpcPath);
+        if (stat == ISOCK_OK) {
             Core.Valid = true;
             return IntVal(SC_CON_OK);
         }
-        return IntVal(SC_CON_RETRY);
+        else if (stat == ISOCK_BILLIONS_MUST_DIE) return IntVal(SC_CON_DEAD);
     } catch (const std::runtime_error& e) {
         bwoink(argv[0], std::format("c++ exception: {}", e.what()).c_str());
         return IntVal(SC_CON_DEAD);
