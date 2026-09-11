@@ -24,7 +24,7 @@
 
 SpessComputers Core;
 
-void bwoink(CByondValue &src, const char * msg) {
+/* void bwoink(CByondValue &src, const char * msg) {
     printf("\x1b[31mSPESSCOMPUTERS ERROR: %s\x1b[0m\n", msg);
     CByondValue str;
     ByondValue_SetStr(&str, msg);
@@ -33,7 +33,7 @@ void bwoink(CByondValue &src, const char * msg) {
     Byond_WriteList(&vlist, &str, 1);
     CByondValue Res; // discarded
     Byond_CallProc(&src, "BwoinkatizeMeCaptain", &vlist, 1, &Res);
-}
+} */
 
 // automagically allocates a string for formatting
 int auto_vsprintf(char ** ptr, const char * fmt, va_list args) {
@@ -217,6 +217,7 @@ BYOND_API_METHOD(init_try_connect) {
             return IntVal(SC_CON_OK);
         }
         else if (stat == ISOCK_BILLIONS_MUST_DIE) return IntVal(SC_CON_DEAD);
+        return IntVal(SC_CON_RETRY);
     } catch (const std::runtime_error& e) {
         bwoink(argv[0], std::format("c++ exception: {}", e.what()).c_str());
         return IntVal(SC_CON_DEAD);

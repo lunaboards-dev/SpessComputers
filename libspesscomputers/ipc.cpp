@@ -1,4 +1,5 @@
 #include "ipc.hpp"
+#include "socket.hpp"
 
 #ifdef __WIN32__
 #define MSG_DONTWAIT 0 // i should fucking kill someone
@@ -43,17 +44,24 @@ void IPC_Flush(CByondValue * ss) {
 ipc_header rcv_buffer;
 
 bool IPC_Next(CByondValue * ss) {
-    auto count = recv(Core.Handle, &rcv_buffer, sizeof(ipc_header), MSG_DONTWAIT | MSG_PEEK); // this is retarded
+    /* auto count = recv(Core.Handle, &rcv_buffer, sizeof(ipc_header), MSG_DONTWAIT | MSG_PEEK); // this is retarded
     // C++ i swear to god
     if (count < ((ssize_t)sizeof(ipc_header))) {
         return false;
+    } */
+    size_t size = sizeof(ipc_header);
+    int stat = MainSocket->read_async(&rcv_buffer, &size, true);
+    if (stat != ISOCK_OK) {
+        return false;
     }
     // actually consume the buffer
-    recv(Core.Handle, &rcv_buffer, sizeof(ipc_header), 0);
+    //recv(Core.Handle, &rcv_buffer, sizeof(ipc_header), 0);
+    MainSocket->read_sync(&rcv_buffer, sizeof(ipc_header));
     printf("(C++ DEBUG) IPC: Type %u, Size %u\n", rcv_buffer.sectype, rcv_buffer.len);
     // we can block here now
     void * ptr = sc_alloc(rcv_buffer.len);
-    recv(Core.Handle, ptr, rcv_buffer.len, 0);
+    //recv(Core.Handle, ptr, rcv_buffer.len, 0);
+    MainSocket->read_sync(ptr, rcv_buffer.len);
     auto hand = Handlers;
     while (*hand != nullptr) {
         if ((*hand)->sec_id == rcv_buffer.sectype) { // somehow C++ is smarter about casing enums to their inherited types than C#
