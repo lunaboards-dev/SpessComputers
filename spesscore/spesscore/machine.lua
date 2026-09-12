@@ -879,7 +879,7 @@ local sandbox = {
 sandbox._G = sandbox
 
 function sandbox.load(chunk, chunkname, mode, env)
-	return load(chunk, chunkname, "t", sandbox or env)
+	return load(chunk, chunkname, "t", env or sandbox)
 end
 
 function sandbox.setmetatable(obj, meta)
