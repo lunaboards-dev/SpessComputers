@@ -83,5 +83,3 @@ BYOND_API_DEF(tick)
 BYOND_API_DEF(power)
 BYOND_API_DEF(send_signal)
 BYOND_API_DEF(register_api)
-
-#define WTF_BWOINK(SSsc, msg) bwoink(SSsc, std::format("WTF!? {}({}:{}) - {}", __func__, __FILE__, __LINE__, msg))

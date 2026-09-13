@@ -634,3 +634,6 @@ vite.config.ts.timestamp-*
 *.lib
 *.a
 *.db
+
+# ignore core dumps from dotnet
+core_*
