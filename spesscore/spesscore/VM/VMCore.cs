@@ -162,13 +162,25 @@ class VMCore
     unsafe nuint Allocator(lua_State ud, nuint ptr, ulong osize, ulong nsize)
     {
         nint delta = ((int)nsize)-((int)osize);
+        if (ptr == 0)
+            delta = (nint)nsize;
+        
+        if (ptr != 0 && nsize == 0)
+        {
+            // Explicitly free memory, just in case???
+            NativeMemory.Free((void*)ptr);
+            CurrentAlloc-=(int)osize;
+            return 0;
+        }
+        
         if (delta+CurrentAlloc > MaxMemory)
         {
             Console.WriteLine("OOM");
             return 0; // wrong, chlorine trifluoride
         }
         void* p = NativeMemory.Realloc((void*)ptr, (nuint)nsize);
-        CurrentAlloc+=(int)delta;
+        if (p != null)
+            CurrentAlloc+=(int)delta;
         return (nuint)p;
     }
     lua_Alloc AllocatorDel;
