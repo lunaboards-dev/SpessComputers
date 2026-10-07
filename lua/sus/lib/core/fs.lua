@@ -13,6 +13,8 @@ local fs = {}
 ---@type mount[]
 local mounts = {}
 
+fs.mounts = mounts
+
 ---Splits path into parts
 ---@param path string Path to split
 ---@return string[] # Path parts
@@ -79,6 +81,13 @@ function fs.resolve(path)
         if path_pfx_match(mounts[i].point, spath) then
             return mounts[i].proxy, unprefix(mounts[i].point, spath)
         end
+    end
+end
+
+function fs.resolve_if_exists(path)
+    local prox, path = fs.resolve(path)
+    if prox:pstat(path) then
+        return prox, path
     end
 end
 

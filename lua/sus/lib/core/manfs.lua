@@ -9,7 +9,7 @@ local fs = {
 }
 
 function fs:open(path, flags)
-
+    
 end
 
 function fs:pstat(path)

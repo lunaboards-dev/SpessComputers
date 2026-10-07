@@ -1,2 +1,4 @@
 @root sus
 @output sus-root.db
+
++user	$!exists    type=directory

@@ -1,0 +1,4 @@
+path = {
+    "/bin/?.lua";
+    "/user/bin/?.lua";
+}
