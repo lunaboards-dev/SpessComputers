@@ -16,6 +16,7 @@ end
 
 local function find_cmd(cmdname)
     local path = os.getenv("path")
+    path = path or {"/bin/?.lua"}
     for i=1, #path do
         local cpath = path[i]:gsub("%?", cmdname)
         if io.exists(cpath) then

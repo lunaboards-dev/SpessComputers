@@ -4,7 +4,9 @@ local flags = {
 
 }
 
-local fs = {}
+local fs = {
+    blksize = 512
+}
 
 function fs:open(path, flags)
 
