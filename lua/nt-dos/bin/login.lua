@@ -1,4 +1,12 @@
 local auth = require("auth")
 
-print("Login")
-print("Press Control-Enter to show login prompt or swipe keycard to log in.")
+while true do
+    print("Login")
+    print("Press Control-Enter to show login prompt or swipe keycard to log in.")
+
+    local ctx = auth.context()
+
+    if not ctx:await() then
+        
+    end
+end

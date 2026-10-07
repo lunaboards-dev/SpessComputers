@@ -25,3 +25,6 @@
 ~boot/  chmod=rwxr-x---
 -.install
 +user	type=directory
+-bin/crash.lua
+-bin/   $ext=crash
+-lib/crash/
