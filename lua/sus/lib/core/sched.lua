@@ -1,13 +1,19 @@
+---@alias kthd_io {open: table[], stdout: table, stdin: table, stderr: table}
+---@alias kthd {name: string, parent: kthd, coro: thread, env: table, children: kthd[],
+--- cmdline: string, priority: number, signals: table, deadline: number, io: kthd_io,
+--- evars: table<string, any>}
 local thd = {}
 
 thd.cycle_deadline = 0.1
-
+--- Threads
+--- @type kthd[]
 local threads = {}
 
+---@return kthd
 function thd.add(name, parent, coro, env, opt)
-    table.insert(threads, {
+    local thd = {
         name = name,
-        parent = part,
+        parent = parent,
         coro = coro,
         env = env,
         children = {},
@@ -17,12 +23,14 @@ function thd.add(name, parent, coro, env, opt)
         deadline = 0,
         io = {
             open = {},
-            stdout = opt.stdout
+            stdout = opt.stdout,
             stdin = opt.stdin,
             stderr = opt.stderr
         },
-        env = {}
-    })
+        evars = {}
+    }
+    table.insert(threads, thd)
+    return thd
 end
 
 local function thd_sort(a, b)
@@ -32,7 +40,7 @@ end
 function thd.run()
     table.sort(threads, thd_sort)
     for i=1, #threads do
-        coroutine.kresume(threads)
+        coroutine.kresume(threads[i].coro)
     end
 end
 
@@ -40,8 +48,9 @@ function thd.threads()
     local i = 0
     local t = {}
     for i=1, #threads do
-        table.insert(t, threads)
+        table.insert(t, threads[i])
     end
+    ---@return kthd|nil
     return function()
         i = i + 1
         return t[i]
@@ -52,6 +61,11 @@ function thd.current()
     for i=1, #threads do
         if threads[i].coro == coroutine.running() then return threads[i] end
     end
+    return nil
+end
+
+function thd.sleep(amt)
+    
 end
 
 return thd

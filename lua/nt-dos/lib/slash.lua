@@ -30,7 +30,7 @@ local function cmd_index(self, index)
     if not cmd then
         -- handle error or something
     end
-    return setmetatable()
+    return cmd_node()
 end
 
 cenv.__index = cmd_index

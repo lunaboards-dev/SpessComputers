@@ -49,6 +49,35 @@ end
 
 dprint("Single User System v1.0")
 
+local sched = load_file("/lib/core/sched.lua")()
+
+sched.add("kinit", nil, coroutine.create(function()
+    -- actually do init stuff here
+    local _fs = load_file("/lib/core/manfs.lua")()
+    local fsobj = setmetatable({dev=rdev}, {__index=_fs})
+    local bootobj = {
+        root = fsobj,
+        loadfile = load_file,
+        readfile = read_file,
+        status = dprint
+    }
+
+    local scr = {}
+    for ent in fsobj:opendir("/boot") do
+        table.insert(scr, "/boot/"..ent)
+    end
+    table.sort(scr)
+    for i=1, #scr do
+        bootobj.status("> "..scr[i])
+        load_file(scr[i])(bootobj)
+    end
+
+    while true do
+        sched.sleep(math.huge)
+    end
+end), _G, {priority=math.huge})
+
+--[[ 
 local _fs = load_file("/lib/core/manfs.lua")()
 local fsobj = setmetatable({dev=rdev}, {__index=_fs})
 local bootobj = {
@@ -63,10 +92,11 @@ for ent in fsobj:opendir("/boot") do
     table.insert(scr, "/boot/"..ent)
 end
 table.sort(scr)
-
 for i=1, #scr do
     dprint("> "..scr[i])
     load_file(scr[i])(bootobj)
-end
+end ]]
+
+sched.run()
 
 error("returned to init!")
