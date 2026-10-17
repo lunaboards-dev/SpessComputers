@@ -1,5 +1,4 @@
 #include "core.hpp"
-#include "spawn.hpp"
 #include "ipc.hpp"
 #include "spesscore.hpp"
 #include "socket.hpp"
@@ -165,15 +164,14 @@ BYOND_API_METHOD(init) {
         std::string sock_path = "";
 
         auto vars = CreateArgList(args, ws_path, exe_path, sock_path);
-        int pid = 0;
-        int ok = OpenSpesscore(exe_path, vars, &pid);
+        int ok = Spesscore->spawn(exe_path, vars);
         if (ok != 0) {
             char * ebuf = nullptr;
             auto_sprintf(&ebuf, "failed to start spesscore: %s (%d)", strerror(ok), ok);
             bwoink(src, ebuf); // thousands of spessmen must die
             return ByondFalse;
         }
-        Core.PID = pid;
+        Core.PID = 1; // TODO: fix this bullshit
         struct sockaddr_un addr;
         memset(&addr, 0, sizeof(addr));
         addr.sun_family = AF_UNIX;

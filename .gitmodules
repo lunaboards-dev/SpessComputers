@@ -1,0 +1,3 @@
+[submodule "byond-lunar-utils"]
+	path = byond-lunar-utils
+	url = https://github.com/lunaboards-dev/byond-lunar-utils.git

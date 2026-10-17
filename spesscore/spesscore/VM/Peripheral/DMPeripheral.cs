@@ -13,6 +13,16 @@ class DMPeripheral : IPeripheral
 
     public uint Reference => throw new NotImplementedException();
 
+    enum RPCCallArgType
+    {
+        
+    }
+
+    void StartRPCCall(string func, object[] args)
+    {
+        
+    }
+
     public void Attach(Computer computer)
     {
         throw new NotImplementedException();

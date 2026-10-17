@@ -638,3 +638,5 @@ vite.config.ts.timestamp-*
 
 # ignore core dumps from dotnet
 core_*
+
+/build/
