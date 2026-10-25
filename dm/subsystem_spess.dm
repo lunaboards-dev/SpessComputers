@@ -19,7 +19,8 @@ SUBSYSTEM_DEF(spesscomputers)
     var/list/bwoinks = list()
     var/list/proc_is_kill = FALSE
     var/list/proc_is_crash = FALSE
-    var/list/proc_error
+    var/list/proc_error = list()
+    var/list/proc_mapping = list()
 
 /datum/controller/subsystem/spesscomputers/Initialize()
     // we're working on it
