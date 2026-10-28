@@ -12,7 +12,8 @@ enum IPCSectionID : uint16_t {
     IPC_SBwoink,
     IPC_SEvent,
     IPC_SPing,
-    IPC_SCreateBIOS
+    IPC_SCreateBIOS,
+    IPC_SRPC
     /* IPC_SPing,
     IPC_SPong,
     IPC_SEvent,
@@ -50,6 +51,7 @@ extern IPCSectionHandler PongHandler;
 extern IPCSectionHandler EventHandler;
 extern IPCSectionHandler TTYHandler;
 extern IPCSectionHandler SetIDHandler;
+extern IPCSectionHandler RPCHandler;
 
 extern IPCSectionHandler* Handlers[];
 

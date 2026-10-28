@@ -100,6 +100,7 @@ bool NullRead(CByondValue&,void*,size_t) {
 IPCSectionHandler* Handlers[] = {
     &TTYHandler,
     &SetIDHandler,
+    &RPCHandler,
     /* &PingHandler,
     &PongHandler,
     &EventHandler, */

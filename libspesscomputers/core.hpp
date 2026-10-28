@@ -10,8 +10,10 @@
 #include <queue>
 #include "utils.hpp"
 
-#define NUMBER 0x2A
-#define DATUM 0x21
+#include <lunarutils/types.hpp>
+
+//#define NUMBER 0x2A
+//#define DATUM 0x21
 
 static CByondValue ByondTrue = {
     .type = NUMBER,

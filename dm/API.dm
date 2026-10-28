@@ -1,3 +1,11 @@
+/datum/spess_callback
+    var/list/atypes = list();
+    var/rtype = 0;
+
+/datum/spess_callback/New(rettype, list/argtype)
+    atypes = argtype
+    rtype = rettype
+
 /datum/spess_peripheral
     // name of your peripheral
     var/name = ""
@@ -7,7 +15,6 @@
 
     // callback names and proc references
     var/list/callbacks = list();
-    var/list/args = list();
 
     // (you)
     var/holder
