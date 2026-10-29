@@ -1,0 +1,2 @@
+namespace spesscore.IPC.RPC;
+

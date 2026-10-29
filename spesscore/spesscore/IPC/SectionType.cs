@@ -8,5 +8,7 @@ namespace spesscore.IPC;
         Bwoink,
         Event,
         Ping,
-        CreateBIOS
+        CreateBIOS,
+        RPC,
+        RegisterDev
     }
