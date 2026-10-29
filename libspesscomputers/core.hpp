@@ -9,6 +9,7 @@
 #include <format>
 #include <queue>
 #include "utils.hpp"
+#include "rpc.hpp"
 
 #include <lunarutils/types.hpp>
 
@@ -63,6 +64,7 @@ struct SpessComputers {
     std::vector<u4c> CreatedComputers;
     std::vector<std::string> DestroyedComptuers;
     std::unordered_map<u4c, ComputerState> ComputerMapping;
+    std::vector<struct SCDevInfo> DeviceInfo;
     std::string WsPath;
     std::string ExePath;
     std::string IpcPath;

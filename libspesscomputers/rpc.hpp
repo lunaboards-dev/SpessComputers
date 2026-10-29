@@ -13,18 +13,15 @@ enum RPCArgType : uint8_t {
     RT_NULL = 128
 };
 
-
-class SCMethodInfo {
-    public:
-        std::string path;
-        unsigned int refid;
-        RPCArgType rettype;
-        std::vector<RPCArgType> args;
+struct SCMethodInfo {
+    std::string path;
+    unsigned int refid;
+    RPCArgType rettype;
+    std::vector<RPCArgType> args;
 };
 
-class SCDevInfo {
-    public:
-        std::string name;
-        unsigned int refid;
-        std::vector<SCMethodInfo> methods;
+struct SCDevInfo {
+    std::string name;
+    unsigned int refid;
+    std::vector<SCMethodInfo> methods;
 };
