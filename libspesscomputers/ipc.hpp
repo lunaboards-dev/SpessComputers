@@ -13,7 +13,8 @@ enum IPCSectionID : uint16_t {
     IPC_SEvent,
     IPC_SPing,
     IPC_SCreateBIOS,
-    IPC_SRPC
+    IPC_SRPC,
+    IPC_SRegisterDev
     /* IPC_SPing,
     IPC_SPong,
     IPC_SEvent,

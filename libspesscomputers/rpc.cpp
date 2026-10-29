@@ -1,4 +1,5 @@
 #include "ipc.hpp"
+#include "rpc.hpp"
 #include <lunarutils/blob.hpp>
 
 struct RPCCallHeader {
@@ -17,18 +18,6 @@ struct RPCReturnHeader {
 #define RPC_HEADER_SIZE sizeof(struct RPCCallHeader)
 #define RPC_RETURN_SIZE sizeof(struct RPCReturnHeader)
 
-enum RPCArgType : uint8_t {
-    RT_UNDEFINED = 0,
-    RT_INT,
-    RT_FLOAT,
-    RT_BOOL,
-    RT_STRING,
-    RT_BLOB,
-    RT_LIST,
-    RT_MAP,
-    RT_INVALID,
-    RT_NULL = 128
-};
 
 #define IS_NULLABLE(x) (x & RT_NULL)
 #define TYPE_MASK ((RPCArgType) 0x7F)

@@ -1,5 +1,9 @@
-#define SPESS_DEVICE(name) /datum/spess_peripheral/##name
+#define SPESS_DEVICE(name) /datum/spess_peripheral/##name \
+/datum/spess_periph_def/##name \
+    periph_path = /datum/spess_peripheral/##name
+
 #define SPESS_METHOD(ppath, rtv, argl) ppath =  new /datum/spess_callback(rtv, argl)
+
 #define SC_TUNDEFINED 0
 #define SC_TINT 1
 #define SC_TFLOAT 2
