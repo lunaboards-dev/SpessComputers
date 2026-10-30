@@ -76,6 +76,12 @@ struct RPCItem
         Type = RPCArgType.Bool;
     }
 
+    public RPCItem()
+    {
+        Data = null;
+        Type = RPCArgType.Undefined;
+    }
+
     public static explicit operator bool(RPCItem i)
     {
         switch(i.Type)
@@ -184,5 +190,10 @@ struct RPCItem
         {
             return [];
         }
+    }
+
+    public unsafe static RPCItem Deserialize(RPCArgType type, byte * ptr)
+    {
+        return default;
     }
 }

@@ -1,6 +1,6 @@
 namespace spesscore.IPC.RPC;
 
-enum RPCArgType
+enum RPCArgType : byte
 {
     Undefined,
     Int,

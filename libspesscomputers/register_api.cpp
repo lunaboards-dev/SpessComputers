@@ -26,14 +26,14 @@ void DevReadInfo(CByondValue * ss, CByondValue * dev, struct SCDevInfo &devinfo)
     devinfo.name = ByondValue_ToString(&name);
     CByondValue methods;
     Byond_ReadVar(dev, "callbacks", &methods);
-    unsigned int methodc = 0;
+    u4c methodc = 0;
     Byond_ReadListAssoc(&methods, NULL, &methodc);
     CByondValue * values = (CByondValue *) sc_alloc(sizeof(CByondValue)*methodc);
     for (int i = 0; i < methodc; i+=2) {
         CByondValue rtv, args;
         Byond_ReadVar(values+i+1, "rtype", &rtv);
         Byond_ReadVar(values+i+1, "atype", &args);
-        unsigned int acount = 0;
+        u4c acount = 0;
         Byond_ReadList(&args, NULL, &acount);
         CByondValue * argl = (CByondValue*) sc_alloc(sizeof(CByondValue)*acount);
         Byond_ReadList(&args, argl, &acount);

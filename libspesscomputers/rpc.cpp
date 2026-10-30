@@ -33,6 +33,13 @@ bool BoundedRead(void ** ptr, void * out, unsigned int amt, void * max) {
 }
 
 bool ReadBasicType(CByondValue &ss, void ** ptr, RPCArgType type, CByondValue *val, void * maxptr) {
+    // you like defs nowhere near their usage? c++ sure does.
+    int vi = 0;
+    float vf = 0;
+    unsigned int vbl = 0;
+    const char * str;
+    size_t _ptr, _maxptr, max_size, count;
+    ByondBlob * blob;
     switch (type) {
         case RT_UNDEFINED:
         case RT_NULL:
@@ -40,7 +47,6 @@ bool ReadBasicType(CByondValue &ss, void ** ptr, RPCArgType type, CByondValue *v
             break;
         case RT_BOOL:
         case RT_INT:
-            int vi = 0;
             if (!BoundedRead(ptr, &vi, 4, maxptr)) {
                 WTF_BWOINK(ss, "section arg overflow");
                 return false;
@@ -48,7 +54,6 @@ bool ReadBasicType(CByondValue &ss, void ** ptr, RPCArgType type, CByondValue *v
             ByondValue_SetNum(val, vi);
             break;
         case RT_FLOAT:
-            float vf = 0;
             if (!BoundedRead(ptr, &vf, 4, maxptr)) {
                 WTF_BWOINK(ss, "section arg overflow");
                 return false;
@@ -56,11 +61,11 @@ bool ReadBasicType(CByondValue &ss, void ** ptr, RPCArgType type, CByondValue *v
             ByondValue_SetNum(val, vf);
             break;
         case RT_STRING:
-            const char * str = (char *) ptr;
-            size_t _ptr = (size_t) ptr;
-            size_t _maxptr = (size_t) maxptr;
-            size_t max_size = _maxptr-_ptr;
-            size_t count = strnlen(str, max_size);
+            str = (char *) ptr;
+            _ptr = (size_t) ptr;
+            _maxptr = (size_t) maxptr;
+            max_size = _maxptr-_ptr;
+            count = strnlen(str, max_size);
             if (count == max_size) {
                 WTF_BWOINK(ss, "section arg overflow (no null terminator)");
                 return false;
@@ -69,7 +74,6 @@ bool ReadBasicType(CByondValue &ss, void ** ptr, RPCArgType type, CByondValue *v
             ptr = ptr + count;
             break;
         case RT_BLOB:
-            unsigned int vbl = 0;
             if (!BoundedRead(ptr, &vbl, 4, maxptr)) {
                 WTF_BWOINK(ss, "section arg overflow");
                 return false;
@@ -83,7 +87,7 @@ bool ReadBasicType(CByondValue &ss, void ** ptr, RPCArgType type, CByondValue *v
                 WTF_BWOINK(ss, "internal error (blob copy overflow)");
                 return false;
             }
-            ByondBlob * blob = new MemoryBlob(buffer, vbl);
+            blob = new MemoryBlob(buffer, vbl);
             blob->set(*val);
             break;
     }
@@ -119,9 +123,10 @@ RPCArgType WriteBasicValue(CByondValue& ss, std::vector<char> &res, CByondValue 
         return RT_NULL;
     } else if (ByondValue_IsNum(v)) {
         res.resize(head+4);
+        int wv;
         switch ((RPCArgType) (expected & 0x7F)) {
             case RT_INT:
-                int wv = v->data.num;
+                wv = v->data.num;
                 memcpy(res.data()+head, &wv, 4);
                 break;
             default:
@@ -147,7 +152,7 @@ RPCArgType WriteBasicValue(CByondValue& ss, std::vector<char> &res, CByondValue 
         blob->read(size, res.data()+head+4);
         return RT_BLOB;
     } else {
-        unsigned int len = 0;
+        u4c len = 0;
         Byond_ToString(v, NULL, &len);
         res.resize(head+len);
         Byond_ToString(v, res.data()+head, &len);
@@ -157,8 +162,8 @@ RPCArgType WriteBasicValue(CByondValue& ss, std::vector<char> &res, CByondValue 
 
 RPCArgType WriteList(CByondValue &ss, std::vector<char> &res, CByondValue * v) {
     int head = res.size();
-    unsigned int len = 0;
-    unsigned int alen = 0;
+    u4c len = 0;
+    u4c alen = 0;
     Byond_ReadList(v, NULL, &alen);
     Byond_ReadListAssoc(v, NULL, &len);
     if (alen < (len/2)) {
@@ -237,7 +242,8 @@ bool RPCExecRead(CByondValue& ss, void * blk, size_t sec_size) {
             }
             sc_free(arr);
         } else {
-            WTF_BWOINK(ss, std::format("unknown type: {:#02x}", type));
+            std::string err = std::format("unknown type: {:#02x}", (uint8_t)type);
+            WTF_BWOINK(ss, err);
             sc_free(args);
             return false;
         }
