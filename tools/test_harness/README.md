@@ -1,0 +1,2 @@
+# Offline Test Harness
+This tool exists to spin up an instance of SpessCore and test the IPC/RPC. It emulates the function libspesscomputers and BYOND side of things. This does NOT replace in-game testing, but allows for quicker itteration.
