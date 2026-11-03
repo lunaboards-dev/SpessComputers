@@ -1,0 +1,4 @@
+#define SS_INIT_SUCCESS 1
+#define SS_INIT_FAILURE 0
+
+#define SECONDS * 10

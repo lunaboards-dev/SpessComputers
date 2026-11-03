@@ -19,7 +19,7 @@ class SpessCore {
             auto st = state();
             if (st.running) return false;
             if (st.crashed) { // everything is fucked
-                bwoink(src, std::format("spesscore crashed! ({})", strsignal(st.code)));
+                WTF_BWOINK(src, std::format("spesscore crashed! ({})", strsignal(st.code)));
                 return true;
             } else { // what? probably an uncaught C# exception, though this should SIGABRT
                 bwoink(src, std::format("spesscore stopped! (exit code: {})", st.code));

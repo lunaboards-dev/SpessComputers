@@ -640,3 +640,5 @@ vite.config.ts.timestamp-*
 core_*
 
 /build/
+
+spesstest.dmb

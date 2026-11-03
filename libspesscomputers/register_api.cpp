@@ -55,7 +55,7 @@ void DevReadInfo(CByondValue * ss, CByondValue * dev, struct SCDevInfo &devinfo)
     Core.DeviceInfo.push_back(devinfo);
 }
 
-BYOND_API_METHOD(dev_register) {
+extern "C" BYOND_API_METHOD(dev_register) {
     if (argc != 2) {
         Byond_CRASH("dev_register needs src and dev");
     }

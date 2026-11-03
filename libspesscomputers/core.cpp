@@ -180,6 +180,7 @@ BYOND_API_METHOD(init) {
         }
         strcpy(addr.sun_path, sock_path.c_str());
         Core.SocketAddr = addr;
+        Core.IpcPath = sock_path;
         return ByondTrue;
     } catch (const std::runtime_error& e) {
         bwoink(argv[0], std::format("c++ exception: {}", e.what()).c_str());
@@ -215,6 +216,7 @@ BYOND_API_METHOD(init_try_connect) {
             return IntVal(SC_CON_OK);
         }
         else if (stat == ISOCK_BILLIONS_MUST_DIE) return IntVal(SC_CON_DEAD);
+        bwoink(argv[0], std::format("socket exception({}): {}", Core.IpcPath, strerror(errno)).c_str());
         return IntVal(SC_CON_RETRY);
     } catch (const std::runtime_error& e) {
         bwoink(argv[0], std::format("c++ exception: {}", e.what()).c_str());

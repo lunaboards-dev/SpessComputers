@@ -22,7 +22,7 @@ class IPCSocket {
         virtual int read_async(void * buffer, size_t * size, bool peek) = 0;
         // Connects to a socket at the specified path. Duh.
         // This will be retried multiple times if it returns ISOCK_REFUSED
-        virtual int try_connect(std::string path);
+        virtual int try_connect(std::string path) = 0;
 };
 
 extern IPCSocket * MainSocket;

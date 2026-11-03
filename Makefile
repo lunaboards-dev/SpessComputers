@@ -1,7 +1,7 @@
 source_files := $(wildcard libspesscomputers/*.cpp)
 object_files := $(patsubst %.cpp,%.o,$(source_files))
 
-CFLAGS := -g -fPIC -m32 -Lbyond-lunar-utils -Ilibspesscomputers/ -Ibyond-lunar-utils/include -lbyond -lext -llunarutils
+CFLAGS := -g -std=c++23 -fPIC -m32 -Lbyond-lunar-utils -Ilibspesscomputers/ -Ibyond-lunar-utils/include -lbyond -lext -llunarutils -lstdc++exp
 
 .PHONY: byond-lunar-utils/liblunarutils.so spesscore
 
