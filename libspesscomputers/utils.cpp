@@ -11,3 +11,10 @@ void bwoink(CByondValue &src, const char * msg) {
     CByondValue Res; // discarded
     Byond_CallProc(&src, "BwoinkatizeMeCaptain", &vlist, 1, &Res);
 }
+
+std::string bwoink_traceback() {
+    std::string rtv = "Stacktrace: \n";
+    auto trace = std::stacktrace::current();
+    rtv += std::to_string(trace);
+    return rtv;
+}

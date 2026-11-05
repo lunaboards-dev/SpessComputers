@@ -9,6 +9,7 @@ namespace spesscore.IPC;
 class IPC
 {
     Socket sock;
+    Stream debug;
     Dictionary<SectionType, IIPCSection> Sections = [];
     Dictionary<SectionType, int> Counters = [];
 
@@ -23,12 +24,45 @@ class IPC
     {
         sock = s;
         AddSection(new CreateTTY()); // fuck it, this is all we need
+        AddSection(new DevRegister());
+        debug = File.OpenWrite("debug.bin");
+    }
+
+    void hint(bool recv)
+    {
+        debug.WriteByte((byte)(recv ? 0 : 1));
+    }
+
+    int recv(byte[] buffer, bool soh = false)
+    {
+        int amt = sock.Receive(buffer);
+        if (soh) hint(true);
+        debug.Write(buffer, 0, amt);
+        debug.Flush();
+        return amt;
+    }
+
+    int send(byte[] buffer, bool soh = false)
+    {
+        int amt = sock.Send(buffer);
+        if (soh) hint(false);
+        debug.Write(buffer);
+        debug.Flush();
+        return amt;
+    }
+
+    int send(ReadOnlySpan<byte> buffer, bool soh = false)
+    {
+        int amt = sock.Send(buffer);
+        if (soh) hint(false);
+        debug.Write(buffer);
+        return amt;
     }
 
     unsafe public bool Next()
     {
         byte[] hdr_buf = new byte[sizeof(SectionHeader)];
-        int amt = sock.Receive(hdr_buf);
+        int amt = recv(hdr_buf, true);
         if (amt != hdr_buf.Length)
         {
             // cry about it
@@ -40,7 +74,7 @@ class IPC
             SectionHeader * hdr = (SectionHeader*) hptr;
             Console.WriteLine($"(DEBUG) IPC: Section type: {hdr->SectionType}, Size: {hdr->SectionSize}");
             byte[] body = new byte[hdr->SectionSize];
-            amt = sock.Receive(body);
+            amt = recv(body);
             if (Sections.TryGetValue((SectionType)hdr->SectionType, out IIPCSection? sec)) {
                 fixed (byte * ptr = body)
                 {
@@ -74,8 +108,8 @@ class IPC
                     };
                     byte * ptr = (byte*)&header;
                     ReadOnlySpan<byte> bytes = new(ptr, sizeof(SectionHeader));
-                    sock.Send(bytes);
-                    sock.Send(str.GetBuffer());
+                    send(bytes, true);
+                    send(str.GetBuffer());
                 } else break;
             }
         }
@@ -90,8 +124,8 @@ class IPC
             SectionType = (short)sec
         };
         var hdr = new ReadOnlySpan<byte>((byte*)&header, sizeof(SectionHeader));
-        sock.Send(hdr);
-        sock.Send(data);
+        send(hdr, true);
+        send(data);
     }
 
     void AddSection(IIPCSection sec)

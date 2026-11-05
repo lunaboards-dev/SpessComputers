@@ -34,7 +34,7 @@
 	if (!call_ext(bin_name, "byond:spess_init")(src, list(
 		"execpath" = "./build/spesscore",
 		"workspacepath" = "build/spesscomputers",
-		"ipcsocketpath" = "build/spesscomputers/sock"
+		"ipcsocketpath" = "./sock"
 	))) {
 		PumpErrors()
 		return SS_INIT_FAILURE
@@ -42,7 +42,8 @@
 	world.log  << "SpessCore started!"
 	var/Deadline = world.time + (5 SECONDS)
 	var/InitOK = FALSE
-
+	sleep(1 SECONDS)
+	Deadline = world.time + (5 SECONDS)
 	while (world.time < Deadline)
 		var/stat = call_ext(bin_name, "byond:spess_init_try_connect")(src)
 		PumpErrors()

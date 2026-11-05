@@ -10,4 +10,6 @@ inline void bwoink(CByondValue &src, std::string msg) {
     bwoink(src, msg.c_str());
 }
 
-#define WTF_BWOINK(SSsc, msg) bwoink(SSsc, std::format("WTF!? {}({}:{}) - {}\n", __func__, __FILE__, __LINE__, msg, std::to_string(std::stacktrace::current())))
+std::string bwoink_traceback();
+
+#define WTF_BWOINK(SSsc, msg) bwoink(SSsc, std::format("WTF!? {}({}:{}) - {}\n{}\n", __func__, __FILE__, __LINE__, msg, bwoink_traceback()))

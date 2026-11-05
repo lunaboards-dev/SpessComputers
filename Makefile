@@ -1,7 +1,8 @@
 source_files := $(wildcard libspesscomputers/*.cpp)
 object_files := $(patsubst %.cpp,%.o,$(source_files))
 
-CFLAGS := -g -std=c++23 -fPIC -m32 -Lbyond-lunar-utils -Ilibspesscomputers/ -Ibyond-lunar-utils/include -lbyond -lext -llunarutils -lstdc++exp
+CFLAGS := -g -std=c++23 -fPIC -m32 -Lbyond-lunar-utils -Ilibspesscomputers/ -Ibyond-lunar-utils/include
+CLIBS := -lbyond -lext -llunarutils -lstdc++exp -lstdc++
 
 .PHONY: byond-lunar-utils/liblunarutils.so spesscore
 
@@ -9,7 +10,7 @@ CFLAGS := -g -std=c++23 -fPIC -m32 -Lbyond-lunar-utils -Ilibspesscomputers/ -Iby
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 libspesscomputers.so: byond-lunar-utils/liblunarutils.so $(object_files)
-	$(CC) -shared $(CFLAGS) $(CPPFLAGS) $(object_files) -o libspesscomputers.so
+	$(CC) -shared $(CFLAGS) $(CPPFLAGS) $(object_files) -o libspesscomputers.so $(CLIBS)
 
 byond-lunar-utils/liblunarutils.so:
 	$(MAKE) -C byond-lunar-utils

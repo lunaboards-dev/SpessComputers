@@ -19,20 +19,21 @@ struct MethodInfoHeader {
 
 #define MI_HEADER_SIZE sizeof(struct MethodInfoHeader)
 
-void DevReadInfo(CByondValue * ss, CByondValue * dev, struct SCDevInfo &devinfo) {
+void DevReadInfo(CByondValue * ss, CByondValue * dev, struct SCDevInfo * devinfo) {
     CByondValue name;
     Byond_ReadVar(dev, "name", &name);
-    devinfo.refid = name.data.ref;
-    devinfo.name = ByondValue_ToString(&name);
+    devinfo->refid = name.data.ref;
+    devinfo->name = ByondValue_ToString(&name);
     CByondValue methods;
     Byond_ReadVar(dev, "callbacks", &methods);
     u4c methodc = 0;
     Byond_ReadListAssoc(&methods, NULL, &methodc);
     CByondValue * values = (CByondValue *) sc_alloc(sizeof(CByondValue)*methodc);
+    Byond_ReadListAssoc(&methods, values, &methodc);
     for (int i = 0; i < methodc; i+=2) {
         CByondValue rtv, args;
         Byond_ReadVar(values+i+1, "rtype", &rtv);
-        Byond_ReadVar(values+i+1, "atype", &args);
+        Byond_ReadVar(values+i+1, "atypes", &args);
         u4c acount = 0;
         Byond_ReadList(&args, NULL, &acount);
         CByondValue * argl = (CByondValue*) sc_alloc(sizeof(CByondValue)*acount);
@@ -41,6 +42,7 @@ void DevReadInfo(CByondValue * ss, CByondValue * dev, struct SCDevInfo &devinfo)
         struct SCMethodInfo minfo;
         minfo.refid = values[i].data.ref;
         minfo.path = ByondValue_ToString(values+i);
+        printf("path: %s\n", minfo.path.c_str());
         int rt = rtv.data.num;
         minfo.rettype = (RPCArgType) rt;
 
@@ -49,10 +51,10 @@ void DevReadInfo(CByondValue * ss, CByondValue * dev, struct SCDevInfo &devinfo)
             minfo.args.push_back((RPCArgType) at);
         }
         sc_free(argl);
-        devinfo.methods.push_back(minfo);
+        devinfo->methods.push_back(minfo);
     }
     sc_free(values);
-    Core.DeviceInfo.push_back(devinfo);
+    Core.DeviceInfo.push_back(*devinfo);
 }
 
 extern "C" BYOND_API_METHOD(dev_register) {
@@ -64,7 +66,7 @@ extern "C" BYOND_API_METHOD(dev_register) {
     CByondValue * dev = argv+1;
 
     struct SCDevInfo info;
-    DevReadInfo(ss, dev, info);
+    DevReadInfo(ss, dev, &info);
 
     std::vector<char> buffer;
 
@@ -92,4 +94,5 @@ extern "C" BYOND_API_METHOD(dev_register) {
     }
 
     IPC_Send(ss, IPC_SRegisterDev, buffer.data(), buffer.size());
+    return {};
 }
