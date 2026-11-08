@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using spesscore.VM;
+using static spesscore.VM.Lua;
 
 namespace spesscore.IPC.RPC;
 
@@ -17,18 +19,16 @@ class RPCDev
         public ushort pathlen;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    struct MethodInfoHeader
-    {
-        public uint refid;
-        public RPCArgType rtv;
-        public byte acount;
-        public ushort pathlen;
-    }
+    static readonly unsafe int DI_Size = sizeof(DevInfoHeader);
 
     unsafe public RPCDev(byte * ptr, int size)
     {
+        byte * max = ptr+size;
+        if (size < DI_Size)
+            throw new Exception("dev info smaller than devinfoheader");
         DevInfoHeader * dhdr = (DevInfoHeader *) ptr;
+        if (DI_Size+dhdr->pathlen > size)
+            throw new Exception("dev info can't contain path");
         Path = Encoding.UTF8.GetString(ptr+sizeof(DevInfoHeader), dhdr->pathlen);
         byte * head = ptr+sizeof(DevInfoHeader)+dhdr->pathlen;
         Methods = new RPCMethod[dhdr->mcount];
@@ -36,17 +36,17 @@ class RPCDev
         Console.WriteLine($"device: {Path} ({dhdr->refid}): {dhdr->mcount} methods");
         for (int i = 0; i < dhdr->mcount; ++i)
         {
-            /* MethodInfoHeader * mhdr = (MethodInfoHeader *) head;
-            head += sizeof(MethodInfoHeader);
-            dev.methods[i].refid = mhdr->refid;
-            dev.methods[i].rtv = mhdr->rtv;
-            dev.methods[i].args = new RPCArgType[mhdr->acount];
-            var args = new ReadOnlySpan<RPCArgType>(head, mhdr->acount);
-            args.CopyTo(dev.methods[i].args);
-            head += mhdr->acount;
-            dev.methods[i].path = Encoding.UTF8.GetString(head, mhdr->pathlen);
-            head += mhdr->pathlen;
-            Console.WriteLine($"method: {dev.methods[i].path} ({dev.methods[i].refid}): {mhdr->acount} args"); */
+            Methods[i] = new RPCMethod(&head, max);
         }
+    }
+
+    public Dictionary<string, lua_CFunction> GetMethods(uint srcref)
+    {
+        Dictionary<string, lua_CFunction> funcs = new();
+        foreach (var meth in Methods)
+        {
+            
+        }
+        return funcs;
     }
 }
