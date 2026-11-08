@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Unicode;
+using spesscore.VM;
 using static spesscore.VM.Lua;
 
 namespace spesscore.IPC.RPC;
@@ -43,8 +45,41 @@ public class RPCMethod
         name = path[(path.LastIndexOf("/") + 1)..];
     }
 
+    static RPCArgType RPCType(lua_State L, int idx, out int len)
+    {
+        len = -1;
+        int lt = lua_type(L, idx);
+        if (L == LUA_TNUMBER)
+        {
+            if (lua_isinteger(L, idx))
+                return RPCArgType.Int;
+            return RPCArgType.Float;
+        } else if (L == LUA_TSTRING)
+        {
+            byte[] tmp = lua_tobytebuffer(L, idx);
+            for (int i=0; i < tmp.Length; ++i)
+            {
+                if (tmp[i] < 32) return RPCArgType.Blob;
+            }
+            if (!Utf8.IsValid(tmp)) return RPCArgType.Bool;
+            return RPCArgType.String;
+        } else if (L == LUA_TBOOLEAN)
+        {
+            return RPCArgType.Bool;
+        } else if (L == LUA_TTABLE)
+        {
+            // FUCK
+            long tlen = luaL_len(L, idx);
+        }
+        return RPCArgType.Invalid;
+    }
+
     internal lua_CFunction GetFunc(int sref)
     {
-        
+        return (L) =>
+        {
+            int args = lua_gettop(L);
+            return lua_yield(L, 0);
+        };
     }
 }
