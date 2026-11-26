@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="../lungolua/csharp/src/LungoLua.csproj" />
   <Project Path="build-sc-root/build-sc-root.csproj" />
   <Project Path="spesscore/spesscore.csproj" />
 </Solution>

@@ -10,6 +10,7 @@ using System.Text;
 
 namespace spesscore.VM;
 
+[Obsolete]
 public struct lua_State : IEquatable<lua_State>
 {
 	public nuint Handle;
@@ -28,11 +29,13 @@ public struct lua_State : IEquatable<lua_State>
 	public override readonly int GetHashCode() => Handle.GetHashCode();
 }
 
+[Obsolete]
 public struct lua_KContext
 {
 	public nint Handle;
 }
 
+[Obsolete]
 public static class Lua
 {
 	

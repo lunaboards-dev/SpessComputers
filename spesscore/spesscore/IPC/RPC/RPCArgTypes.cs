@@ -11,5 +11,6 @@ enum RPCArgType : byte
     List,
     Map,
     Invalid,
+    Type = 127,
     Null = 128
 }

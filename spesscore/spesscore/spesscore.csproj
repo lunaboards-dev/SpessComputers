@@ -23,4 +23,8 @@
     <EmbeddedResource Include="bogomips.lua" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../../lungolua/csharp/src/LungoLua.csproj" />
+  </ItemGroup>
+
 </Project>
